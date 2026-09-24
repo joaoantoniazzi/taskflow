@@ -1,0 +1,13 @@
+# Dependências
+node_modules/
+
+# Variáveis de ambiente
+.env
+
+# Build e logs
+dist/
+build/
+*.log
+
+# Arquivos gerados
+/server/src/generated/

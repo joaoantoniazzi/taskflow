@@ -1,0 +1,26 @@
+{
+  "name": "taskflow-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/src/server.js",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio",
+    "db:format": "prisma format",
+    "db:validate": "prisma validate"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.10.0",
+    "bcryptjs": "^3.0.3"
+  },
+  "devDependencies": {
+    "prisma": "^7.10.0",
+    "tsx": "^4.23.15"
+  }
+}

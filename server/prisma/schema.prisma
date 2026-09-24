@@ -1,0 +1,245 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TeamRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum ColumnType {
+  TODO
+  DOING
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_COMMENTED
+  TASK_DUE_SOON
+}
+
+model User {
+  id           String  @id @default(uuid()) @db.Uuid
+  name         String  @db.VarChar(120)
+  email        String  @unique @db.VarChar(255)
+  passwordHash String  @map("password_hash") @db.VarChar(255)
+  avatarUrl    String? @map("avatar_url") @db.VarChar(500)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  teamMemberships TeamMember[]
+
+  createdProjects Project[] @relation("ProjectCreatedBy")
+
+  assignedTasks Task[] @relation("TaskAssignee")
+  createdTasks  Task[] @relation("TaskCreatedBy")
+
+  comments Comment[] @relation("CommentAuthor")
+
+  notifications Notification[]
+
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model Team {
+  id   String @id @default(uuid()) @db.Uuid
+  name String @db.VarChar(120)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  memberships TeamMember[]
+  projects    Project[]
+
+  @@map("teams")
+}
+
+model TeamMember {
+  teamId String @map("team_id") @db.Uuid
+  userId String @map("user_id") @db.Uuid
+
+  role     TeamRole @default(MEMBER)
+  joinedAt DateTime @default(now()) @map("joined_at") @db.Timestamptz(3)
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([teamId, userId])
+  @@index([userId])
+  @@map("team_members")
+}
+
+model Project {
+  id String @id @default(uuid()) @db.Uuid
+
+  teamId      String @map("team_id") @db.Uuid
+  createdById String @map("created_by") @db.Uuid
+
+  name        String    @db.VarChar(150)
+  description String?   @db.Text
+  dueDate     DateTime? @map("due_date") @db.Date
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Restrict)
+
+  createdBy User @relation("ProjectCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  board Board?
+
+  @@index([teamId])
+  @@index([createdById])
+  @@map("projects")
+}
+
+model Board {
+  id String @id @default(uuid()) @db.Uuid
+
+  projectId String @unique @map("project_id") @db.Uuid
+
+  name String @db.VarChar(120)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  columns BoardColumn[]
+
+  @@map("boards")
+}
+
+model BoardColumn {
+  id String @id @default(uuid()) @db.Uuid
+
+  boardId String @map("board_id") @db.Uuid
+
+  name     String     @db.VarChar(80)
+  type     ColumnType
+  position Int        @default(0)
+  wipLimit Int?       @map("wip_limit")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  board Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  tasks Task[]
+
+  @@index([boardId, position])
+  @@map("board_columns")
+}
+
+model Task {
+  id String @id @default(uuid()) @db.Uuid
+
+  columnId String @map("column_id") @db.Uuid
+
+  assigneeId  String? @map("assignee_id") @db.Uuid
+  createdById String  @map("created_by") @db.Uuid
+
+  title       String       @db.VarChar(200)
+  description String?      @db.Text
+  priority    TaskPriority @default(MEDIUM)
+
+  dueDate DateTime? @map("due_date") @db.Timestamptz(3)
+
+  position Int @default(0)
+
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(3)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  column BoardColumn @relation(fields: [columnId], references: [id], onDelete: Cascade)
+
+  assignee User? @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  createdBy User @relation("TaskCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  comments      Comment[]
+  notifications Notification[]
+
+  @@index([columnId, position])
+  @@index([assigneeId])
+  @@index([createdById])
+  @@index([dueDate])
+  @@map("tasks")
+}
+
+model Comment {
+  id String @id @default(uuid()) @db.Uuid
+
+  taskId String @map("task_id") @db.Uuid
+  userId String @map("user_id") @db.Uuid
+
+  content String @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  user User @relation("CommentAuthor", fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([taskId, createdAt])
+  @@index([userId])
+  @@map("comments")
+}
+
+model Notification {
+  id String @id @default(uuid()) @db.Uuid
+
+  userId String  @map("user_id") @db.Uuid
+  taskId String? @map("task_id") @db.Uuid
+
+  type    NotificationType
+  message String           @db.VarChar(500)
+
+  readAt DateTime? @map("read_at") @db.Timestamptz(3)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  task Task? @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+  @@index([taskId])
+  @@map("notifications")
+}
+
+model RefreshToken {
+  id String @id @default(uuid()) @db.Uuid
+
+  userId String @map("user_id") @db.Uuid
+
+  tokenHash String @unique @map("token_hash") @db.VarChar(255)
+
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
