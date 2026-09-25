@@ -1,13 +1,11 @@
-import type {
-  ErrorRequestHandler,
-} from "express";
+import type { ErrorRequestHandler } from "express";
 import { AppError } from "../utils/app-error.js";
 
 export const errorHandler: ErrorRequestHandler = (
   error,
   _request,
   response,
-  next
+  next,
 ) => {
   if (response.headersSent) {
     next(error);
@@ -19,6 +17,9 @@ export const errorHandler: ErrorRequestHandler = (
       error: {
         code: error.code,
         message: error.message,
+        ...(error.details !== undefined
+          ? { details: error.details }
+          : {}),
       },
     });
 
