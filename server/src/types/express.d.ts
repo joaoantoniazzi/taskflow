@@ -6,6 +6,8 @@ declare global {
       user?: {
         id: string;
       };
+
+      teamRole?: "OWNER" | "ADMIN" | "MEMBER";
     }
   }
 }

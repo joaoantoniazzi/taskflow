@@ -36,3 +36,34 @@ export function validateBody(
     next();
   };
 }
+
+export function validateParams(
+  schema: z.ZodType,
+) {
+  return (
+    request: Request,
+    _response: Response,
+    next: NextFunction,
+  ) => {
+    const result = schema.safeParse(
+      request.params,
+    );
+
+    if (!result.success) {
+      next(
+        new AppError(
+          "Parâmetros inválidos.",
+          400,
+          "INVALID_PARAMETERS",
+          z.treeifyError(result.error),
+        ),
+      );
+
+      return;
+    }
+
+    request.params = result.data;
+
+    next();
+  };
+}
