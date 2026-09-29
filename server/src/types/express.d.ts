@@ -16,6 +16,11 @@ declare global {
         | "OWNER"
         | "ADMIN"
         | "MEMBER";
+    
+      taskRole?:
+  	| "OWNER"
+  	| "ADMIN"
+  	| "MEMBER";
     }
   }
 }
