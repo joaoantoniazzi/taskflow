@@ -26,6 +26,14 @@ import {
   teamMemberParamsSchema,
 } from "../schemas/team.schemas.js";
 
+import {
+  projectController,
+} from "../controllers/project.controller.js";
+
+import {
+  createProjectSchema,
+} from "../schemas/project.schemas.js";
+
 const teamRouter = Router();
 
 teamRouter.use(requireAuth);
@@ -109,6 +117,18 @@ teamRouter.delete(
     "ADMIN",
   ),
   teamController.removeMember,
+);
+
+teamRouter.post(
+  "/:teamId/projects",
+  validateParams(teamIdParamsSchema),
+  validateBody(createProjectSchema),
+  requireTeamRole(
+    "OWNER",
+    "ADMIN",
+    "MEMBER",
+  ),
+  projectController.create,
 );
 
 export default teamRouter;

@@ -7,7 +7,15 @@ declare global {
         id: string;
       };
 
-      teamRole?: "OWNER" | "ADMIN" | "MEMBER";
+      teamRole?:
+        | "OWNER"
+        | "ADMIN"
+        | "MEMBER";
+
+      projectRole?:
+        | "OWNER"
+        | "ADMIN"
+        | "MEMBER";
     }
   }
 }
