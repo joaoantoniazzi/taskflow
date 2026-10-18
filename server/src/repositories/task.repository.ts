@@ -159,25 +159,19 @@ export class TaskRepository {
   }
 
   async update(
+    db: DatabaseClient,
     taskId: string,
     data: {
       title?: string;
       description?: string | null;
-      priority?:
-        | "LOW"
-        | "MEDIUM"
-        | "HIGH";
+      priority?: "LOW" | "MEDIUM" | "HIGH";
       assigneeId?: string | null;
       dueDate?: Date | null;
     },
   ) {
-    return prisma.task.update({
-      where: {
-        id: taskId,
-      },
-
+    return db.task.update({
+      where: { id: taskId },
       data,
-
       include: {
         column: {
           include: {
@@ -193,7 +187,6 @@ export class TaskRepository {
             },
           },
         },
-
         assignee: {
           select: {
             id: true,
@@ -202,7 +195,6 @@ export class TaskRepository {
             avatarUrl: true,
           },
         },
-
         createdBy: {
           select: {
             id: true,

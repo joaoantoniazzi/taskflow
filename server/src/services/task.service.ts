@@ -347,51 +347,53 @@ export class TaskService {
       }
     }
 
-    const updated =
-      await taskRepository.update(
-        taskId,
-        {
-          ...(input.title !==
-          undefined
-            ? {
-                title:
-                  input.title,
-              }
-            : {}),
+    const updated = await prisma.$transaction(
+      async (tx) => {
+        const saved = await taskRepository.update(
+          tx,
+          taskId,
+          {
+            ...(input.title !== undefined
+              ? { title: input.title }
+              : {}),
+            ...(input.description !== undefined
+              ? { description: input.description }
+              : {}),
+            ...(input.priority !== undefined
+              ? { priority: input.priority }
+              : {}),
+            ...(input.assigneeId !== undefined
+              ? { assigneeId: input.assigneeId }
+              : {}),
+            ...(input.dueDate !== undefined
+              ? { dueDate: input.dueDate }
+              : {}),
+          },
+        );
 
-          ...(input.description !==
-          undefined
-            ? {
-                description:
-                  input.description,
-              }
-            : {}),
+        const assignmentChanged =
+          input.assigneeId !== undefined &&
+          input.assigneeId !== null &&
+          input.assigneeId !== task.assigneeId;
 
-          ...(input.priority !==
-          undefined
-            ? {
-                priority:
-                  input.priority,
-              }
-            : {}),
+        if (
+          assignmentChanged &&
+          input.assigneeId !== userId
+        ) {
+          await tx.notification.create({
+            data: {
+              userId: input.assigneeId!,
+              taskId,
+              type: "TASK_ASSIGNED",
+              message:
+                `Você recebeu a tarefa "${saved.title}".`,
+            },
+          });
+        }
 
-          ...(input.assigneeId !==
-          undefined
-            ? {
-                assigneeId:
-                  input.assigneeId,
-              }
-            : {}),
-
-          ...(input.dueDate !==
-          undefined
-            ? {
-                dueDate:
-                  input.dueDate,
-              }
-            : {}),
-        },
-      );
+        return saved;
+      },
+    );
 
     return toTaskResponse(
       updated,

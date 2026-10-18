@@ -212,6 +212,7 @@ model Notification {
 
   type    NotificationType
   message String           @db.VarChar(500)
+  dedupeKey String? @unique @map("dedupe_key") @db.VarChar(255)
 
   readAt DateTime? @map("read_at") @db.Timestamptz(3)
 

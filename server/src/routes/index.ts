@@ -5,6 +5,8 @@ import authRouter from "./auth.routes.js";
 import teamRouter from "./team.routes.js";
 import projectRouter from "./project.routes.js";
 import taskRouter from "./task.routes.js";
+import commentRouter from "./comment.routes.js";
+import notificationRouter from "./notification.routes.js";
 
 const router = Router();
 
@@ -32,5 +34,9 @@ router.use(
   "/tasks",
   taskRouter,
 );
+
+router.use(commentRouter);
+
+router.use("/notifications", notificationRouter);
 
 export default router;
