@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   Pressable,
   RefreshControl,
@@ -26,6 +25,19 @@ type BoardResponse = {
 
 type ProjectResponse = {
   project: Project;
+};
+
+const colors = {
+  background: "#F4F3F0",
+  surface: "#FFFFFF",
+  surfaceMuted: "#F8F7F4",
+  text: "#24251F",
+  secondary: "#77786F",
+  muted: "#9A9A91",
+  border: "#E7E5DE",
+  accent: "#C65D32",
+  accentDark: "#A84926",
+  accentSoft: "#F7E9E1",
 };
 
 const priorityLabels: Record<TaskPriority, string> = {
@@ -166,13 +178,12 @@ export default function BoardScreen() {
   }
 
   const loading = projectQuery.isLoading || boardQuery.isLoading;
-
   const refreshLoading = projectQuery.isRefetching || boardQuery.isRefetching;
 
   if (!projectId) {
     return (
       <View style={styles.center}>
-        <Text>Projeto não informado.</Text>
+        <Text style={styles.subtitle}>Projeto não informado.</Text>
       </View>
     );
   }
@@ -180,7 +191,7 @@ export default function BoardScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2459D3" />
+        <ActivityIndicator size="small" color={colors.accent} />
         <Text style={styles.loadingText}>Carregando quadro...</Text>
       </View>
     );
@@ -189,8 +200,8 @@ export default function BoardScreen() {
   if (projectQuery.isError || boardQuery.isError || !project || !board) {
     return (
       <View style={styles.center}>
+        <Text style={styles.emptyEyebrow}>ALGO NÃO SAIU COMO ESPERADO</Text>
         <Text style={styles.errorTitle}>Não foi possível abrir o quadro</Text>
-
         <Text style={styles.subtitle}>
           Verifique a conexão ou suas permissões.
         </Text>
@@ -199,8 +210,8 @@ export default function BoardScreen() {
           <Text style={styles.primaryButtonText}>Tentar novamente</Text>
         </Pressable>
 
-        <Pressable onPress={() => router.back()}>
-          <Text style={styles.backLink}>Voltar</Text>
+        <Pressable onPress={() => router.back()} style={styles.backLinkWrap}>
+          <Text style={styles.backLink}>‹ Voltar</Text>
         </Pressable>
       </View>
     );
@@ -212,14 +223,21 @@ export default function BoardScreen() {
         <Pressable
           accessibilityRole="button"
           onPress={() => router.back()}
-          style={styles.backButton}
+          style={({ pressed }) => [
+            styles.backButton,
+            pressed && styles.pressed,
+          ]}
+          hitSlop={10}
         >
           <Text style={styles.backButtonText}>‹ Projetos</Text>
         </Pressable>
 
         <Pressable
           accessibilityRole="button"
-          style={styles.primaryButton}
+          style={({ pressed }) => [
+            styles.primaryButton,
+            pressed && styles.primaryButtonPressed,
+          ]}
           onPress={() => {
             setFormError("");
             setTitle("");
@@ -228,20 +246,19 @@ export default function BoardScreen() {
             setModalVisible(true);
           }}
         >
-          <Text style={styles.primaryButtonText}>+ Tarefa</Text>
+          <Text style={styles.primaryButtonPlus}>＋</Text>
+          <Text style={styles.primaryButtonText}>Nova tarefa</Text>
         </Pressable>
       </View>
 
       <View style={styles.projectHeader}>
         <Text style={styles.projectTitle}>{project.name}</Text>
-
         <Text style={styles.subtitle}>{project.team.name}</Text>
       </View>
 
       {!!moveError && (
         <View style={styles.errorBanner}>
           <Text style={styles.errorBannerText}>{moveError}</Text>
-
           <Pressable onPress={() => setMoveError("")}>
             <Text style={styles.dismissText}>Fechar</Text>
           </Pressable>
@@ -250,10 +267,13 @@ export default function BoardScreen() {
 
       <ScrollView
         contentContainerStyle={styles.boardContent}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshLoading}
             onRefresh={() => void refresh()}
+            tintColor={colors.accent}
+            colors={[colors.accent]}
           />
         }
       >
@@ -262,7 +282,6 @@ export default function BoardScreen() {
             <View style={styles.columnHeader}>
               <View style={styles.columnNameRow}>
                 <Text style={styles.columnName}>{column.name}</Text>
-
                 <View style={styles.countBadge}>
                   <Text style={styles.countText}>{column.tasks.length}</Text>
                 </View>
@@ -282,7 +301,6 @@ export default function BoardScreen() {
             ) : (
               column.tasks.map((task) => {
                 const previousColumn = board.columns[index - 1];
-
                 const nextColumn = board.columns[index + 1];
 
                 return (
@@ -296,10 +314,15 @@ export default function BoardScreen() {
                           params: { taskId: task.id },
                         })
                       }
-                      style={styles.taskCardContent}
+                      style={({ pressed }) => [
+                        styles.taskCardContent,
+                        pressed && styles.pressed,
+                      ]}
                     >
                       <View style={styles.taskTopRow}>
-                        <Text style={styles.taskTitle}>{task.title}</Text>
+                        <Text style={styles.taskTitle} numberOfLines={2}>
+                          {task.title}
+                        </Text>
 
                         <View
                           style={[
@@ -308,14 +331,21 @@ export default function BoardScreen() {
                             task.priority === "LOW" && styles.lowPriority,
                           ]}
                         >
-                          <Text style={styles.priorityText}>
+                          <Text
+                            style={[
+                              styles.priorityText,
+                              task.priority === "HIGH" &&
+                                styles.highPriorityText,
+                              task.priority === "LOW" && styles.lowPriorityText,
+                            ]}
+                          >
                             {priorityLabels[task.priority]}
                           </Text>
                         </View>
                       </View>
 
                       {task.description ? (
-                        <Text style={styles.taskDescription}>
+                        <Text style={styles.taskDescription} numberOfLines={2}>
                           {task.description}
                         </Text>
                       ) : null}
@@ -338,7 +368,10 @@ export default function BoardScreen() {
                       {previousColumn && (
                         <Pressable
                           accessibilityRole="button"
-                          style={styles.moveButton}
+                          style={({ pressed }) => [
+                            styles.moveButton,
+                            pressed && styles.pressed,
+                          ]}
                           disabled={moveTask.isPending}
                           onPress={() =>
                             handleMove(
@@ -357,7 +390,10 @@ export default function BoardScreen() {
                       {nextColumn && (
                         <Pressable
                           accessibilityRole="button"
-                          style={styles.moveButton}
+                          style={({ pressed }) => [
+                            styles.moveButton,
+                            pressed && styles.pressed,
+                          ]}
                           disabled={moveTask.isPending}
                           onPress={() =>
                             handleMove(
@@ -385,84 +421,123 @@ export default function BoardScreen() {
         visible={modalVisible}
         transparent
         animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
+        onRequestClose={() => {
+          if (!createTask.isPending) setModalVisible(false);
+        }}
+        statusBarTranslucent
       >
         <View style={styles.modalBackdrop}>
+          <Pressable
+            style={styles.backdropTouch}
+            onPress={() => {
+              if (!createTask.isPending) setModalVisible(false);
+            }}
+          />
+
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Nova tarefa</Text>
+            <View style={styles.modalHandle} />
 
-            <Text style={styles.label}>Título</Text>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeadingGroup}>
+                <Text style={styles.modalEyebrow}>TASKFLOW / BOARD</Text>
+                <Text style={styles.modalTitle}>Nova tarefa</Text>
+              </View>
 
-            <TextInput
-              accessibilityLabel="Título da tarefa"
-              style={styles.input}
-              value={title}
-              onChangeText={setTitle}
-              placeholder="Ex.: Implementar login"
-              maxLength={200}
-              editable={!createTask.isPending}
-            />
-
-            <Text style={styles.label}>Descrição</Text>
-
-            <TextInput
-              accessibilityLabel="Descrição da tarefa"
-              style={[styles.input, styles.multiline]}
-              value={description}
-              onChangeText={setDescription}
-              placeholder="Detalhes da atividade"
-              multiline
-              maxLength={10000}
-              textAlignVertical="top"
-              editable={!createTask.isPending}
-            />
-
-            <Text style={styles.label}>Prioridade</Text>
-
-            <View style={styles.priorityOptions}>
-              {(["LOW", "MEDIUM", "HIGH"] as const).map((value) => (
-                <Pressable
-                  key={value}
-                  style={[
-                    styles.priorityOption,
-                    priority === value && styles.priorityOptionSelected,
-                  ]}
-                  onPress={() => setPriority(value)}
-                >
-                  <Text
-                    style={[
-                      styles.priorityOptionText,
-                      priority === value && styles.priorityOptionTextSelected,
-                    ]}
-                  >
-                    {priorityLabels[value]}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-
-            {!!formError && <Text style={styles.formError}>{formError}</Text>}
-
-            <View style={styles.modalActions}>
               <Pressable
-                style={styles.cancelButton}
+                style={styles.closeButton}
                 onPress={() => setModalVisible(false)}
               >
-                <Text style={styles.cancelText}>Cancelar</Text>
-              </Pressable>
-
-              <Pressable
-                style={styles.primaryButton}
-                disabled={createTask.isPending}
-                onPress={handleCreateTask}
-              >
-                {createTask.isPending ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.primaryButtonText}>Criar tarefa</Text>
-                )}
+                <Text style={styles.closeButtonText}>×</Text>
               </Pressable>
             </View>
+
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.modalScrollContent}
+            >
+              <Text style={styles.label}>Título</Text>
+              <TextInput
+                accessibilityLabel="Título da tarefa"
+                style={styles.input}
+                value={title}
+                onChangeText={setTitle}
+                placeholder="Ex.: Implementar login"
+                placeholderTextColor={colors.muted}
+                maxLength={200}
+                editable={!createTask.isPending}
+              />
+
+              <Text style={styles.label}>Descrição (opcional)</Text>
+              <TextInput
+                accessibilityLabel="Descrição da tarefa"
+                style={[styles.input, styles.multiline]}
+                value={description}
+                onChangeText={setDescription}
+                placeholder="Detalhes da atividade"
+                placeholderTextColor={colors.muted}
+                multiline
+                maxLength={10000}
+                textAlignVertical="top"
+                editable={!createTask.isPending}
+              />
+
+              <Text style={styles.label}>Prioridade</Text>
+              <View style={styles.priorityOptions}>
+                {(["LOW", "MEDIUM", "HIGH"] as const).map((value) => {
+                  const selected = priority === value;
+                  return (
+                    <Pressable
+                      key={value}
+                      style={[
+                        styles.priorityOption,
+                        selected && styles.priorityOptionSelected,
+                      ]}
+                      onPress={() => setPriority(value)}
+                    >
+                      <Text
+                        style={[
+                          styles.priorityOptionText,
+                          selected && styles.priorityOptionTextSelected,
+                        ]}
+                      >
+                        {priorityLabels[value]}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              {!!formError && (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.formError}>{formError}</Text>
+                </View>
+              )}
+
+              <View style={styles.modalActions}>
+                <Pressable
+                  style={styles.cancelButton}
+                  onPress={() => setModalVisible(false)}
+                  disabled={createTask.isPending}
+                >
+                  <Text style={styles.cancelText}>Cancelar</Text>
+                </Pressable>
+
+                <Pressable
+                  style={[
+                    styles.primaryButton,
+                    createTask.isPending && styles.disabled,
+                  ]}
+                  disabled={createTask.isPending}
+                  onPress={handleCreateTask}
+                >
+                  {createTask.isPending ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.primaryButtonText}>Criar tarefa</Text>
+                  )}
+                </Pressable>
+              </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -473,249 +548,346 @@ export default function BoardScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#F5F7FB",
-    paddingTop: 48,
+    backgroundColor: colors.background,
+    paddingTop: 52,
   },
   center: {
     flex: 1,
-    backgroundColor: "#F5F7FB",
+    backgroundColor: colors.background,
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
-    gap: 14,
+    gap: 12,
   },
   loadingText: {
-    color: "#667085",
-    marginTop: 8,
+    color: colors.secondary,
+    fontSize: 13,
   },
   header: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 22,
+    paddingBottom: 18,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   backButton: {
-    paddingVertical: 10,
+    paddingVertical: 8,
     paddingRight: 12,
   },
   backButtonText: {
-    color: "#2459D3",
+    color: colors.accent,
     fontWeight: "700",
-    fontSize: 15,
+    fontSize: 14,
   },
   projectHeader: {
     paddingHorizontal: 22,
-    paddingTop: 18,
-    paddingBottom: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
   },
   projectTitle: {
-    fontSize: 25,
-    fontWeight: "800",
-    color: "#172033",
+    fontSize: 22,
+    fontWeight: "700",
+    letterSpacing: -0.6,
+    color: colors.text,
   },
   subtitle: {
-    color: "#667085",
-    fontSize: 14,
-    lineHeight: 21,
-    marginTop: 5,
+    color: colors.secondary,
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 4,
   },
   primaryButton: {
-    minHeight: 42,
-    backgroundColor: "#2459D3",
+    minHeight: 40,
+    backgroundColor: colors.accent,
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 15,
+    paddingHorizontal: 14,
     paddingVertical: 10,
+    flexDirection: "row",
+    gap: 5,
+  },
+  primaryButtonPressed: {
+    backgroundColor: colors.accentDark,
+    transform: [{ scale: 0.98 }],
+  },
+  primaryButtonPlus: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    lineHeight: 15,
+    fontWeight: "500",
   },
   primaryButtonText: {
     color: "#FFFFFF",
     fontWeight: "700",
+    fontSize: 13,
   },
   boardContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 22,
     paddingBottom: 32,
     gap: 18,
   },
   column: {
-    backgroundColor: "#E9EDF5",
+    backgroundColor: "#ECEAE4",
     borderRadius: 16,
-    padding: 12,
-    gap: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 14,
+    gap: 12,
   },
   columnHeader: {
-    paddingVertical: 6,
-    paddingHorizontal: 3,
+    paddingVertical: 4,
+    paddingHorizontal: 2,
   },
   columnNameRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 9,
+    gap: 8,
   },
   columnName: {
-    fontWeight: "800",
-    fontSize: 17,
-    color: "#243047",
+    fontWeight: "700",
+    fontSize: 16,
+    color: colors.text,
+    letterSpacing: -0.3,
   },
   countBadge: {
-    minWidth: 24,
-    minHeight: 24,
-    borderRadius: 12,
-    paddingHorizontal: 7,
-    backgroundColor: "#FFFFFF",
+    minWidth: 22,
+    minHeight: 22,
+    borderRadius: 11,
+    paddingHorizontal: 6,
+    backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   countText: {
-    color: "#344054",
+    color: colors.text,
     fontWeight: "700",
-    fontSize: 12,
+    fontSize: 11,
   },
   wipLabel: {
-    fontSize: 12,
-    color: "#667085",
-    marginTop: 6,
+    fontSize: 11,
+    color: colors.secondary,
+    marginTop: 4,
   },
   emptyColumn: {
-    backgroundColor: "#F8F9FC",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#DFE4EC",
+    borderColor: colors.border,
     borderStyle: "dashed",
     borderRadius: 12,
-    padding: 18,
+    padding: 16,
     textAlign: "center",
-    color: "#667085",
-    fontSize: 13,
+    color: colors.secondary,
+    fontSize: 12,
   },
   taskCard: {
     padding: 14,
     borderRadius: 12,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#E5E8EF",
-    gap: 10,
+    borderColor: colors.border,
+    gap: 12,
+  },
+  taskCardContent: {
+    gap: 8,
   },
   taskTopRow: {
+    flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
     gap: 8,
   },
   taskTitle: {
-    fontSize: 15,
-    lineHeight: 21,
+    fontSize: 14,
+    lineHeight: 20,
     fontWeight: "700",
-    color: "#172033",
-    flexShrink: 1,
+    color: colors.text,
+    flex: 1,
   },
   priorityBadge: {
-    backgroundColor: "#FFF1C2",
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   highPriority: {
-    backgroundColor: "#FEE4E2",
+    backgroundColor: "#FBEDEA",
+    borderColor: "#E5B8A8",
   },
   lowPriority: {
-    backgroundColor: "#E4F4E8",
+    backgroundColor: "#E5F0E9",
+    borderColor: "#B8D5C2",
   },
   priorityText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "700",
-    color: "#344054",
+    color: colors.secondary,
+  },
+  highPriorityText: {
+    color: "#B54738",
+  },
+  lowPriorityText: {
+    color: "#39765B",
   },
   taskDescription: {
-    color: "#475467",
-    fontSize: 13,
-    lineHeight: 20,
+    color: colors.secondary,
+    fontSize: 12,
+    lineHeight: 18,
   },
   taskMeta: {
-    fontSize: 12,
-    color: "#667085",
+    fontSize: 11,
+    color: colors.muted,
   },
   moveActions: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     flexWrap: "wrap",
-    gap: 8,
-    marginTop: 3,
+    gap: 6,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: 10,
   },
   moveButton: {
     borderWidth: 1,
-    borderColor: "#D5DDEB",
+    borderColor: colors.border,
     borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 9,
+    paddingHorizontal: 9,
+    paddingVertical: 7,
+    backgroundColor: colors.surfaceMuted,
   },
   moveButtonText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "700",
-    color: "#2459D3",
+    color: colors.accent,
   },
   errorBanner: {
-    marginHorizontal: 16,
+    marginHorizontal: 22,
     marginBottom: 12,
     borderRadius: 10,
     padding: 12,
-    backgroundColor: "#FEE4E2",
+    backgroundColor: "#FBEDEA",
+    borderWidth: 1,
+    borderColor: "#E5B8A8",
     flexDirection: "row",
     gap: 10,
     alignItems: "center",
     justifyContent: "space-between",
   },
   errorBannerText: {
-    color: "#B42318",
+    color: "#B54738",
     flex: 1,
     fontSize: 13,
+    fontWeight: "600",
   },
   dismissText: {
-    color: "#B42318",
+    color: "#B54738",
     fontWeight: "700",
+    fontSize: 13,
   },
   errorTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#172033",
+    color: colors.text,
     textAlign: "center",
   },
+  emptyEyebrow: {
+    color: colors.accent,
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 1.4,
+  },
+  backLinkWrap: {
+    marginTop: 4,
+  },
   backLink: {
-    marginTop: 8,
-    color: "#2459D3",
+    color: colors.accent,
     fontWeight: "700",
+    fontSize: 13,
   },
   modalBackdrop: {
     flex: 1,
     justifyContent: "flex-end",
-    backgroundColor: "rgba(14, 24, 44, 0.45)",
+    backgroundColor: "rgba(36, 37, 31, 0.42)",
+  },
+  backdropTouch: {
+    flex: 1,
   },
   modalCard: {
-    backgroundColor: "#FFFFFF",
-    padding: 24,
-    paddingBottom: 34,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    gap: 10,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 22,
+    paddingTop: 12,
+    paddingBottom: 32,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    maxHeight: "90%",
+    gap: 12,
+  },
+  modalHandle: {
+    width: 35,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: "#D8D5CC",
+    alignSelf: "center",
+    marginBottom: 6,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 4,
+  },
+  modalHeadingGroup: {
+    flex: 1,
+    gap: 4,
+  },
+  modalEyebrow: {
+    color: colors.accent,
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 1.4,
   },
   modalTitle: {
-    fontSize: 23,
-    fontWeight: "800",
-    color: "#172033",
-    marginBottom: 8,
+    fontSize: 22,
+    fontWeight: "700",
+    color: colors.text,
+    letterSpacing: -0.5,
+  },
+  closeButton: {
+    width: 30,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  closeButtonText: {
+    color: colors.secondary,
+    fontSize: 24,
+    lineHeight: 24,
+  },
+  modalScrollContent: {
+    paddingBottom: 20,
+    gap: 10,
   },
   label: {
-    color: "#263247",
-    fontSize: 14,
-    fontWeight: "600",
-    marginTop: 5,
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "700",
+    marginTop: 4,
   },
   input: {
     minHeight: 48,
     borderWidth: 1,
-    borderColor: "#DCE2EC",
+    borderColor: colors.border,
     borderRadius: 10,
-    paddingHorizontal: 13,
+    paddingHorizontal: 14,
     fontSize: 15,
-    color: "#172033",
+    color: colors.text,
+    backgroundColor: colors.surface,
   },
   multiline: {
     minHeight: 85,
@@ -727,44 +899,56 @@ const styles = StyleSheet.create({
   },
   priorityOption: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 9,
+    paddingVertical: 11,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#DCE2EC",
+    borderColor: colors.border,
     alignItems: "center",
+    backgroundColor: colors.surface,
   },
   priorityOptionSelected: {
-    borderColor: "#2459D3",
-    backgroundColor: "#F0F4FF",
+    borderColor: colors.accent,
+    backgroundColor: colors.accentSoft,
   },
   priorityOptionText: {
     fontSize: 13,
-    color: "#475467",
+    color: colors.secondary,
     fontWeight: "600",
   },
   priorityOptionTextSelected: {
-    color: "#2459D3",
+    color: colors.accentDark,
+    fontWeight: "700",
+  },
+  errorContainer: {
+    backgroundColor: "#FBEDEA",
+    padding: 10,
+    borderRadius: 8,
   },
   formError: {
-    color: "#B42318",
+    color: "#B54738",
     fontSize: 13,
+    fontWeight: "600",
   },
   modalActions: {
     flexDirection: "row",
     justifyContent: "flex-end",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
     marginTop: 12,
   },
   cancelButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 13,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
   },
   cancelText: {
-    color: "#475467",
+    color: colors.secondary,
     fontWeight: "600",
+    fontSize: 13,
   },
-  taskCardContent: {
-    gap: 10,
+  disabled: {
+    opacity: 0.65,
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });

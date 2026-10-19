@@ -78,6 +78,19 @@ type TeamResponse = {
   };
 };
 
+const colors = {
+  background: "#F4F3F0",
+  surface: "#FFFFFF",
+  surfaceMuted: "#F8F7F4",
+  text: "#24251F",
+  secondary: "#77786F",
+  muted: "#9A9A91",
+  border: "#E7E5DE",
+  accent: "#C65D32",
+  accentDark: "#A84926",
+  accentSoft: "#F7E9E1",
+};
+
 const priorities: {
   value: TaskPriority;
   label: string;
@@ -155,11 +168,6 @@ export default function TaskDetailScreen() {
       apiRequest<{ comments: CommentItem[] }>(`/tasks/${taskId}/comments`),
   });
 
-  /*
-   * Inicializa os campos somente quando a tarefa
-   * é carregada pela primeira vez nesta tela.
-   * Refetches de comentários não apagam o rascunho.
-   */
   useEffect(() => {
     if (!task || initializedTaskId.current === task.id) {
       return;
@@ -237,7 +245,6 @@ export default function TaskDetailScreen() {
   });
 
   const comments = commentsQuery.data?.comments ?? [];
-
   const members = teamQuery.data?.team.members ?? [];
 
   function handleDateChange(event: DateTimePickerEvent, selectedDate?: Date) {
@@ -270,7 +277,7 @@ export default function TaskDetailScreen() {
   if (taskQuery.isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2459D3" />
+        <ActivityIndicator size="small" color={colors.accent} />
         <Text style={styles.muted}>Carregando tarefa...</Text>
       </View>
     );
@@ -279,6 +286,7 @@ export default function TaskDetailScreen() {
   if (taskQuery.isError || !task) {
     return (
       <View style={styles.center}>
+        <Text style={styles.emptyEyebrow}>ALGO NÃO SAIU COMO ESPERADO</Text>
         <Text style={styles.title}>Não foi possível carregar a tarefa</Text>
         <Pressable
           style={styles.primaryButton}
@@ -286,8 +294,8 @@ export default function TaskDetailScreen() {
         >
           <Text style={styles.primaryButtonText}>Tentar novamente</Text>
         </Pressable>
-        <Pressable onPress={() => router.back()}>
-          <Text style={styles.link}>Voltar</Text>
+        <Pressable onPress={() => router.back()} style={styles.backLinkWrap}>
+          <Text style={styles.link}>‹ Voltar</Text>
         </Pressable>
       </View>
     );
@@ -296,7 +304,14 @@ export default function TaskDetailScreen() {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable
+          onPress={() => router.back()}
+          style={({ pressed }) => [
+            styles.backButton,
+            pressed && styles.pressed,
+          ]}
+          hitSlop={10}
+        >
           <Text style={styles.link}>‹ Voltar</Text>
         </Pressable>
 
@@ -305,10 +320,10 @@ export default function TaskDetailScreen() {
 
       <ScrollView
         contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.projectName}>{task.project.name}</Text>
-
         <Text style={styles.title}>Detalhes da tarefa</Text>
 
         <Text style={styles.label}>Título</Text>
@@ -317,6 +332,7 @@ export default function TaskDetailScreen() {
           style={styles.input}
           value={title}
           onChangeText={setTitle}
+          placeholderTextColor={colors.muted}
           maxLength={200}
         />
 
@@ -330,34 +346,35 @@ export default function TaskDetailScreen() {
           maxLength={10000}
           textAlignVertical="top"
           placeholder="Descreva a tarefa..."
+          placeholderTextColor={colors.muted}
         />
 
         <Text style={styles.label}>Prioridade</Text>
         <View style={styles.optionsRow}>
-          {priorities.map((item) => (
-            <Pressable
-              key={item.value}
-              onPress={() => setPriority(item.value)}
-              style={[
-                styles.option,
-                priority === item.value && styles.optionSelected,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.optionText,
-                  priority === item.value && styles.optionTextSelected,
-                ]}
+          {priorities.map((item) => {
+            const selected = priority === item.value;
+            return (
+              <Pressable
+                key={item.value}
+                onPress={() => setPriority(item.value)}
+                style={[styles.option, selected && styles.optionSelected]}
               >
-                {item.label}
-              </Text>
-            </Pressable>
-          ))}
+                <Text
+                  style={[
+                    styles.optionText,
+                    selected && styles.optionTextSelected,
+                  ]}
+                >
+                  {item.label}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
 
         <Text style={styles.label}>Responsável</Text>
         {teamQuery.isLoading ? (
-          <ActivityIndicator />
+          <ActivityIndicator size="small" color={colors.accent} />
         ) : teamQuery.isError ? (
           <Text style={styles.muted}>
             Não foi possível carregar os membros da equipe.
@@ -365,9 +382,10 @@ export default function TaskDetailScreen() {
         ) : (
           <View style={styles.memberList}>
             <Pressable
-              style={[
+              style={({ pressed }) => [
                 styles.memberOption,
                 !assigneeId && styles.memberSelected,
+                pressed && styles.pressed,
               ]}
               onPress={() => setAssigneeId("")}
             >
@@ -375,27 +393,29 @@ export default function TaskDetailScreen() {
               {!assigneeId && <Text style={styles.check}>✓</Text>}
             </Pressable>
 
-            {members.map((member) => (
-              <Pressable
-                key={member.id}
-                style={[
-                  styles.memberOption,
-                  assigneeId === member.id && styles.memberSelected,
-                ]}
-                onPress={() => setAssigneeId(member.id)}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.memberText}>{member.name}</Text>
-                  <Text style={styles.memberSubtext}>
-                    {member.role} · {member.email}
-                  </Text>
-                </View>
+            {members.map((member) => {
+              const selected = assigneeId === member.id;
+              return (
+                <Pressable
+                  key={member.id}
+                  style={({ pressed }) => [
+                    styles.memberOption,
+                    selected && styles.memberSelected,
+                    pressed && styles.pressed,
+                  ]}
+                  onPress={() => setAssigneeId(member.id)}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.memberText}>{member.name}</Text>
+                    <Text style={styles.memberSubtext}>
+                      {member.role} · {member.email}
+                    </Text>
+                  </View>
 
-                {assigneeId === member.id && (
-                  <Text style={styles.check}>✓</Text>
-                )}
-              </Pressable>
-            ))}
+                  {selected && <Text style={styles.check}>✓</Text>}
+                </Pressable>
+              );
+            })}
           </View>
         )}
 
@@ -407,7 +427,10 @@ export default function TaskDetailScreen() {
           </Text>
 
           <Pressable
-            style={styles.secondaryButton}
+            style={({ pressed }) => [
+              styles.secondaryButton,
+              pressed && styles.pressed,
+            ]}
             onPress={() => {
               if (Platform.OS === "ios") {
                 setShowIOSDatePicker(true);
@@ -441,8 +464,9 @@ export default function TaskDetailScreen() {
         <View style={styles.saveContainer}>
           <Pressable
             accessibilityRole="button"
-            style={[
+            style={({ pressed }) => [
               styles.primaryButton,
+              pressed && styles.primaryButtonPressed,
               saveTask.isPending && styles.disabled,
             ]}
             disabled={saveTask.isPending}
@@ -456,7 +480,9 @@ export default function TaskDetailScreen() {
           </Pressable>
 
           {saveTask.isError && (
-            <Text style={styles.errorText}>{saveTask.error.message}</Text>
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{saveTask.error.message}</Text>
+            </View>
           )}
         </View>
 
@@ -465,7 +491,7 @@ export default function TaskDetailScreen() {
         <Text style={styles.sectionTitle}>Comentários</Text>
 
         {commentsQuery.isLoading ? (
-          <ActivityIndicator />
+          <ActivityIndicator size="small" color={colors.accent} />
         ) : commentsQuery.isError ? (
           <Text style={styles.muted}>
             Não foi possível carregar os comentários.
@@ -497,25 +523,29 @@ export default function TaskDetailScreen() {
           maxLength={10000}
           textAlignVertical="top"
           placeholder="Escreva um comentário..."
+          placeholderTextColor={colors.muted}
         />
 
         <Pressable
-          style={[
-            styles.secondaryButton,
-            createComment.isPending && styles.disabled,
+          style={({ pressed }) => [
+            styles.secondaryButtonFull,
+            (createComment.isPending || !commentText.trim()) && styles.disabled,
+            pressed && styles.pressed,
           ]}
           disabled={createComment.isPending || !commentText.trim()}
           onPress={handleAddComment}
         >
           {createComment.isPending ? (
-            <ActivityIndicator color="#2459D3" />
+            <ActivityIndicator color={colors.accent} />
           ) : (
             <Text style={styles.secondaryButtonText}>Publicar comentário</Text>
           )}
         </Pressable>
 
         {createComment.isError && (
-          <Text style={styles.errorText}>{createComment.error.message}</Text>
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{createComment.error.message}</Text>
+          </View>
         )}
 
         <Text style={styles.footerMeta}>Criada por {task.createdBy.name}</Text>
@@ -556,62 +586,67 @@ export default function TaskDetailScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#F5F7FB",
-    paddingTop: 48,
+    backgroundColor: colors.background,
+    paddingTop: 52,
   },
   center: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
-    gap: 16,
-    backgroundColor: "#F5F7FB",
+    gap: 12,
+    backgroundColor: colors.background,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingBottom: 12,
+    paddingHorizontal: 22,
+    paddingBottom: 16,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   backButton: {
-    padding: 8,
+    paddingVertical: 4,
   },
   headerCaption: {
     fontSize: 13,
-    color: "#667085",
+    color: colors.secondary,
+    fontWeight: "600",
   },
   content: {
-    padding: 20,
+    padding: 22,
     paddingBottom: 48,
     gap: 12,
   },
   projectName: {
-    color: "#2459D3",
+    color: colors.accent,
     fontWeight: "700",
     fontSize: 13,
+    letterSpacing: 0.3,
   },
   title: {
-    color: "#172033",
-    fontWeight: "800",
-    fontSize: 25,
-    marginBottom: 8,
+    color: colors.text,
+    fontWeight: "700",
+    fontSize: 22,
+    letterSpacing: -0.6,
+    marginBottom: 6,
   },
   label: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "700",
-    color: "#263247",
-    marginTop: 7,
+    color: colors.text,
+    marginTop: 6,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#DCE2EC",
+    borderColor: colors.border,
     borderRadius: 10,
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 13,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
-    color: "#172033",
+    color: colors.text,
   },
   multiline: {
     minHeight: 90,
@@ -623,53 +658,56 @@ const styles = StyleSheet.create({
   option: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#DCE2EC",
-    paddingVertical: 12,
+    borderColor: colors.border,
+    paddingVertical: 11,
     borderRadius: 10,
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
   },
   optionSelected: {
-    borderColor: "#2459D3",
-    backgroundColor: "#EAF0FF",
+    borderColor: colors.accent,
+    backgroundColor: colors.accentSoft,
   },
   optionText: {
-    color: "#475467",
+    color: colors.secondary,
     fontWeight: "600",
+    fontSize: 13,
   },
   optionTextSelected: {
-    color: "#2459D3",
+    color: colors.accentDark,
+    fontWeight: "700",
   },
   memberList: {
     gap: 8,
   },
   memberOption: {
     borderWidth: 1,
-    borderColor: "#E0E5ED",
+    borderColor: colors.border,
     padding: 12,
     borderRadius: 10,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
   },
   memberSelected: {
-    borderColor: "#2459D3",
-    backgroundColor: "#F0F4FF",
+    borderColor: colors.accent,
+    backgroundColor: colors.accentSoft,
   },
   memberText: {
-    color: "#263247",
+    color: colors.text,
     fontWeight: "600",
+    fontSize: 14,
   },
   memberSubtext: {
-    color: "#667085",
-    fontSize: 12,
-    marginTop: 4,
+    color: colors.secondary,
+    fontSize: 11,
+    marginTop: 3,
   },
   check: {
-    color: "#2459D3",
+    color: colors.accent,
     fontWeight: "800",
-    fontSize: 17,
+    fontSize: 16,
   },
   dateRow: {
     flexDirection: "row",
@@ -678,107 +716,146 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   dateText: {
-    color: "#344054",
+    color: colors.text,
     fontWeight: "600",
+    fontSize: 14,
   },
   secondaryButton: {
     alignSelf: "flex-start",
     borderWidth: 1,
-    borderColor: "#2459D3",
+    borderColor: colors.border,
     borderRadius: 10,
     paddingHorizontal: 14,
-    paddingVertical: 11,
+    paddingVertical: 10,
+    backgroundColor: colors.surface,
+  },
+  secondaryButtonFull: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    marginTop: 4,
   },
   secondaryButtonText: {
-    color: "#2459D3",
+    color: colors.text,
     fontWeight: "700",
+    fontSize: 13,
   },
   clearDateButton: {
     alignSelf: "flex-start",
-    paddingVertical: 5,
+    paddingVertical: 2,
   },
   saveContainer: {
     marginTop: 10,
     gap: 8,
   },
   primaryButton: {
-    backgroundColor: "#2459D3",
+    backgroundColor: colors.accent,
     borderRadius: 10,
-    minHeight: 46,
+    minHeight: 48,
     paddingHorizontal: 16,
     paddingVertical: 12,
     alignItems: "center",
     justifyContent: "center",
   },
+  primaryButtonPressed: {
+    backgroundColor: colors.accentDark,
+    transform: [{ scale: 0.98 }],
+  },
   primaryButtonText: {
     color: "#FFFFFF",
     fontWeight: "700",
+    fontSize: 14,
   },
   disabled: {
     opacity: 0.6,
   },
   divider: {
     height: 1,
-    backgroundColor: "#DCE2EC",
-    marginVertical: 18,
+    backgroundColor: colors.border,
+    marginVertical: 16,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#172033",
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.text,
+    letterSpacing: -0.4,
   },
   commentCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#E5E8EF",
+    borderColor: colors.border,
     padding: 14,
     borderRadius: 12,
-    gap: 6,
+    gap: 5,
   },
   commentAuthor: {
-    color: "#2459D3",
+    color: colors.accentDark,
     fontWeight: "700",
-    fontSize: 14,
+    fontSize: 13,
   },
   commentContent: {
-    color: "#344054",
-    lineHeight: 21,
+    color: colors.text,
+    fontSize: 13,
+    lineHeight: 19,
   },
   commentDate: {
-    color: "#98A2B3",
+    color: colors.muted,
     fontSize: 11,
   },
   commentInput: {
     minHeight: 85,
   },
   footerMeta: {
-    marginTop: 18,
-    color: "#98A2B3",
+    marginTop: 16,
+    color: colors.muted,
     fontSize: 12,
   },
   muted: {
-    color: "#667085",
-    lineHeight: 21,
+    color: colors.secondary,
+    lineHeight: 20,
+    fontSize: 13,
   },
   link: {
-    color: "#2459D3",
+    color: colors.accent,
     fontWeight: "700",
+    fontSize: 13,
+  },
+  errorContainer: {
+    backgroundColor: "#FBEDEA",
+    padding: 10,
+    borderRadius: 8,
   },
   errorText: {
-    color: "#B42318",
+    color: "#B54738",
     fontSize: 13,
+    fontWeight: "600",
   },
   modalBackdrop: {
     flex: 1,
     justifyContent: "flex-end",
-    backgroundColor: "rgba(14,24,44,0.45)",
+    backgroundColor: "rgba(36, 37, 31, 0.42)",
   },
   dateModal: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     padding: 22,
     paddingBottom: 32,
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22,
     gap: 12,
+  },
+  emptyEyebrow: {
+    color: colors.accent,
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 1.4,
+  },
+  backLinkWrap: {
+    marginTop: 4,
+  },
+  pressed: {
+    opacity: 0.65,
   },
 });

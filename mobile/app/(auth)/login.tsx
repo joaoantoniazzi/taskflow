@@ -15,6 +15,17 @@ import { Link } from "expo-router";
 
 import { useAuth } from "../../src/auth/auth-context";
 
+const colors = {
+  background: "#F4F3F0",
+  surface: "#FFFFFF",
+  text: "#24251F",
+  secondary: "#77786F",
+  muted: "#9A9A91",
+  border: "#E7E5DE",
+  accent: "#C65D32",
+  accentDark: "#A84926",
+};
+
 export default function LoginScreen() {
   const { signIn } = useAuth();
 
@@ -52,9 +63,13 @@ export default function LoginScreen() {
       <ScrollView
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
         <View style={styles.heading}>
-          <Text style={styles.logo}>TaskFlow</Text>
+          <View style={styles.wordmark}>
+            <Text style={styles.logo}>taskflow</Text>
+            <View style={styles.wordmarkDot} />
+          </View>
 
           <Text style={styles.subtitle}>
             Organize projetos. Acompanhe tarefas. Trabalhe em equipe.
@@ -68,6 +83,7 @@ export default function LoginScreen() {
             accessibilityLabel="E-mail"
             style={styles.input}
             placeholder="voce@exemplo.com"
+            placeholderTextColor={colors.muted}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
@@ -82,6 +98,7 @@ export default function LoginScreen() {
             accessibilityLabel="Senha"
             style={styles.input}
             placeholder="Sua senha"
+            placeholderTextColor={colors.muted}
             secureTextEntry
             value={password}
             onChangeText={setPassword}
@@ -92,7 +109,11 @@ export default function LoginScreen() {
 
           <Pressable
             accessibilityRole="button"
-            style={[styles.button, loading && styles.disabled]}
+            style={({ pressed }) => [
+              styles.button,
+              pressed && styles.buttonPressed,
+              loading && styles.disabled,
+            ]}
             onPress={handleLogin}
             disabled={loading}
           >
@@ -121,7 +142,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
-    backgroundColor: "#F5F7FB",
+    backgroundColor: colors.background,
   },
   container: {
     flexGrow: 1,
@@ -131,45 +152,66 @@ const styles = StyleSheet.create({
   heading: {
     marginBottom: 32,
   },
+  wordmark: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
   logo: {
     fontSize: 36,
     fontWeight: "800",
-    color: "#2459D3",
+    letterSpacing: -1.4,
+    color: colors.text,
+  },
+  wordmarkDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.accent,
+    marginTop: 13,
   },
   subtitle: {
     marginTop: 10,
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#5B6474",
+    fontSize: 15,
+    lineHeight: 22,
+    color: colors.secondary,
   },
   form: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     padding: 22,
-    borderRadius: 18,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
     gap: 10,
   },
   label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#263247",
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.text,
+    marginBottom: 2,
   },
   input: {
-    minHeight: 50,
+    minHeight: 48,
     borderWidth: 1,
-    borderColor: "#DCE2EC",
+    borderColor: colors.border,
     borderRadius: 10,
     paddingHorizontal: 14,
-    fontSize: 16,
-    color: "#172033",
+    fontSize: 15,
+    color: colors.text,
+    backgroundColor: colors.surface,
     marginBottom: 10,
   },
   button: {
-    minHeight: 50,
-    backgroundColor: "#2459D3",
+    minHeight: 48,
+    backgroundColor: colors.accent,
     borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 8,
+  },
+  buttonPressed: {
+    backgroundColor: colors.accentDark,
+    transform: [{ scale: 0.98 }],
   },
   disabled: {
     opacity: 0.65,
@@ -177,20 +219,22 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#FFFFFF",
     fontWeight: "700",
-    fontSize: 16,
+    fontSize: 15,
   },
   footer: {
-    marginTop: 14,
+    marginTop: 16,
     flexDirection: "row",
     justifyContent: "center",
     flexWrap: "wrap",
     gap: 5,
   },
   footerText: {
-    color: "#5B6474",
+    color: colors.secondary,
+    fontSize: 13,
   },
   link: {
-    color: "#2459D3",
+    color: colors.accent,
     fontWeight: "700",
+    fontSize: 13,
   },
 });

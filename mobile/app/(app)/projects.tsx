@@ -14,7 +14,7 @@ import { router } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useAuth } from "../../src/auth/auth-context";
-import { apiRequest, ApiError } from "../../src/lib/api";
+import { apiRequest } from "../../src/lib/api";
 import type { Project, Team } from "../../src/types/api";
 
 type ProjectListResponse = {
@@ -24,6 +24,26 @@ type ProjectListResponse = {
 type TeamListResponse = {
   teams: Team[];
 };
+
+const colors = {
+  background: "#F4F3F0",
+  surface: "#FFFFFF",
+  surfaceMuted: "#F8F7F4",
+  text: "#24251F",
+  secondary: "#77786F",
+  muted: "#9A9A91",
+  border: "#E7E5DE",
+  accent: "#C65D32",
+  accentDark: "#A84926",
+};
+
+const projectPalettes = [
+  { background: "#F7E9E1", foreground: "#A84926" },
+  { background: "#E8EDE4", foreground: "#4D6B45" },
+  { background: "#E9E8F2", foreground: "#68618F" },
+  { background: "#F3EBCF", foreground: "#8C7029" },
+  { background: "#E2ECEE", foreground: "#47737A" },
+];
 
 export default function ProjectsScreen() {
   const { user, signOut } = useAuth();
@@ -146,7 +166,6 @@ export default function ProjectsScreen() {
   }
 
   const loading = projectsQuery.isLoading || teamsQuery.isLoading;
-
   const refreshing = projectsQuery.isRefetching || teamsQuery.isRefetching;
 
   async function refresh() {
@@ -156,26 +175,41 @@ export default function ProjectsScreen() {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.brand}>TaskFlow</Text>
-          <Text style={styles.greeting}>Olá, {user?.name ?? "usuário"}</Text>
+        <View style={styles.brandGroup}>
+          <View style={styles.wordmark}>
+            <Text style={styles.brand}>taskflow</Text>
+            <View style={styles.wordmarkDot} />
+          </View>
+          <Text style={styles.greeting}>
+            Olá, {user?.name?.trim().split(/\s+/)[0] || "usuário"}
+          </Text>
         </View>
 
-        <Pressable
-          accessibilityRole="button"
-          style={styles.textButton}
-          onPress={() => router.push("/(app)/notifications")}
-        >
-          <Text style={styles.textButtonLabel}>Avisos</Text>
-        </Pressable>
+        <View style={styles.headerActions}>
+          <Pressable
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              styles.textButton,
+              pressed && styles.pressed,
+            ]}
+            onPress={() => router.push("/(app)/notifications")}
+          >
+            <Text style={styles.textButtonLabel}>Avisos</Text>
+          </Pressable>
 
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => void signOut()}
-          style={styles.textButton}
-        >
-          <Text style={styles.textButtonLabel}>Sair</Text>
-        </Pressable>
+          <View style={styles.headerDivider} />
+
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => void signOut()}
+            style={({ pressed }) => [
+              styles.textButton,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text style={styles.textButtonLabel}>Sair ↗</Text>
+          </Pressable>
+        </View>
       </View>
 
       <View style={styles.sectionHeader}>
@@ -186,30 +220,40 @@ export default function ProjectsScreen() {
 
         <Pressable
           accessibilityRole="button"
-          style={styles.primaryButton}
+          style={({ pressed }) => [
+            styles.primaryButton,
+            pressed && styles.primaryButtonPressed,
+          ]}
           onPress={openProjectModal}
         >
-          <Text style={styles.primaryButtonLabel}>+ Projeto</Text>
+          <Text style={styles.primaryButtonPlus}>＋</Text>
+          <Text style={styles.primaryButtonLabel}>Novo projeto</Text>
         </Pressable>
       </View>
 
       <ScrollView
         contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => void refresh()}
+            tintColor={colors.accent}
+            colors={[colors.accent]}
           />
         }
       >
         {loading ? (
-          <ActivityIndicator style={styles.loader} size="large" />
+          <View style={styles.loaderState}>
+            <ActivityIndicator size="small" color={colors.accent} />
+            <Text style={styles.loaderText}>Carregando projetos...</Text>
+          </View>
         ) : projectsQuery.isError || teamsQuery.isError ? (
           <View style={styles.emptyState}>
+            <Text style={styles.emptyEyebrow}>ALGO NÃO SAIU COMO ESPERADO</Text>
             <Text style={styles.emptyTitle}>
               Não foi possível carregar os dados
             </Text>
-
             <Text style={styles.subtitle}>
               Verifique a conexão com a API e tente atualizar.
             </Text>
@@ -223,8 +267,8 @@ export default function ProjectsScreen() {
           </View>
         ) : projects.length === 0 ? (
           <View style={styles.emptyState}>
+            <Text style={styles.emptyEyebrow}>COMECE A ORGANIZAR</Text>
             <Text style={styles.emptyTitle}>Nenhum projeto ainda</Text>
-
             <Text style={styles.subtitle}>
               Crie uma equipe e depois organize seu primeiro projeto em um
               quadro Kanban.
@@ -242,54 +286,74 @@ export default function ProjectsScreen() {
             </Pressable>
           </View>
         ) : (
-          projects.map((project) => (
-            <Pressable
-              key={project.id}
-              accessibilityRole="button"
-              style={({ pressed }) => [
-                styles.projectCard,
-                pressed && styles.pressed,
-              ]}
-              onPress={() =>
-                router.push({
-                  pathname: "/(app)/board/[projectId]",
-                  params: {
-                    projectId: project.id,
-                  },
-                })
-              }
-            >
-              <View style={styles.projectIcon}>
-                <Text style={styles.projectIconLabel}>
-                  {project.name.trim().charAt(0).toUpperCase()}
-                </Text>
-              </View>
+          projects.map((project, index) => {
+            const palette = projectPalettes[index % projectPalettes.length];
+            const initial = project.name.trim().charAt(0).toUpperCase() || "P";
 
-              <View style={styles.projectInfo}>
-                <Text style={styles.projectName}>{project.name}</Text>
+            return (
+              <Pressable
+                key={project.id}
+                accessibilityRole="button"
+                style={({ pressed }) => [
+                  styles.projectCard,
+                  pressed && styles.projectCardPressed,
+                ]}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(app)/board/[projectId]",
+                    params: {
+                      projectId: project.id,
+                    },
+                  })
+                }
+              >
+                <View
+                  style={[
+                    styles.projectInitialWrap,
+                    { backgroundColor: palette.background },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.projectInitial,
+                      { color: palette.foreground },
+                    ]}
+                  >
+                    {initial}
+                  </Text>
+                </View>
 
-                <Text style={styles.teamName}>{project.team.name}</Text>
+                <View style={styles.projectInfo}>
+                  <Text style={styles.projectName} numberOfLines={2}>
+                    {project.name}
+                  </Text>
+                  <Text style={styles.teamName} numberOfLines={1}>
+                    {project.team.name}
+                  </Text>
+                  <View style={styles.metaRow}>
+                    <View style={styles.taskStatusDot} />
+                    <Text style={styles.taskCount}>
+                      {project.taskCount}{" "}
+                      {project.taskCount === 1 ? "tarefa" : "tarefas"}
+                    </Text>
+                  </View>
+                </View>
 
-                <Text style={styles.taskCount}>
-                  {project.taskCount}{" "}
-                  {project.taskCount === 1 ? "tarefa" : "tarefas"}
-                </Text>
-              </View>
-
-              <Text style={styles.chevron}>›</Text>
-            </Pressable>
-          ))
+                <Text style={styles.chevron}>›</Text>
+              </Pressable>
+            );
+          })
         )}
 
-        {!loading && teams.length === 0 && (
+        {!loading && teams.length === 0 && projects.length > 0 && (
           <Pressable
-            style={styles.secondaryButton}
+            style={styles.secondaryButtonFull}
             onPress={() => {
               setFormError("");
               setModal("team");
             }}
           >
-            <Text style={styles.secondaryButtonLabel}>Criar equipe</Text>
+            <Text style={styles.secondaryButtonLabel}>+ Criar equipe</Text>
           </Pressable>
         )}
       </ScrollView>
@@ -298,54 +362,91 @@ export default function ProjectsScreen() {
         visible={modal !== null}
         transparent
         animationType="slide"
-        onRequestClose={() => setModal(null)}
+        onRequestClose={() => {
+          if (!createTeam.isPending && !createProject.isPending) setModal(null);
+        }}
+        statusBarTranslucent
       >
         <View style={styles.modalBackdrop}>
+          <Pressable
+            style={styles.backdropTouch}
+            onPress={() => {
+              if (!createTeam.isPending && !createProject.isPending)
+                setModal(null);
+            }}
+          />
+
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>
-              {modal === "team" ? "Nova equipe" : "Novo projeto"}
-            </Text>
+            <View style={styles.modalHandle} />
+
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeadingGroup}>
+                <Text style={styles.modalEyebrow}>TASKFLOW / WORKSPACE</Text>
+                <Text style={styles.modalTitle}>
+                  {modal === "team" ? "Nova equipe" : "Novo projeto"}
+                </Text>
+              </View>
+
+              <Pressable
+                style={styles.closeButton}
+                onPress={() => setModal(null)}
+              >
+                <Text style={styles.closeButtonText}>×</Text>
+              </Pressable>
+            </View>
 
             {modal === "team" ? (
               <>
                 <Text style={styles.label}>Nome da equipe</Text>
-
                 <TextInput
                   accessibilityLabel="Nome da equipe"
                   style={styles.input}
                   value={teamName}
                   onChangeText={setTeamName}
                   placeholder="Ex.: Equipe de desenvolvimento"
+                  placeholderTextColor={colors.muted}
                   editable={!createTeam.isPending}
                   maxLength={120}
+                  autoCapitalize="words"
                 />
               </>
             ) : (
               <>
-                <Text style={styles.label}>Equipe</Text>
+                <Text style={styles.label}>Equipe responsável</Text>
 
-                {teams.map((team) => (
-                  <Pressable
-                    key={team.id}
-                    style={[
-                      styles.teamOption,
-                      selectedTeamId === team.id && styles.teamOptionSelected,
-                    ]}
-                    onPress={() => setSelectedTeamId(team.id)}
-                  >
-                    <Text
+                {teams.map((team) => {
+                  const selected = selectedTeamId === team.id;
+                  return (
+                    <Pressable
+                      key={team.id}
                       style={[
-                        styles.teamOptionText,
-                        selectedTeamId === team.id &&
-                          styles.teamOptionTextSelected,
+                        styles.teamOption,
+                        selected && styles.teamOptionSelected,
                       ]}
+                      onPress={() => setSelectedTeamId(team.id)}
                     >
-                      {team.name}
-                    </Text>
-
-                    <Text style={styles.teamRole}>{team.role}</Text>
-                  </Pressable>
-                ))}
+                      <View style={styles.teamOptionContent}>
+                        <Text
+                          style={[
+                            styles.teamOptionText,
+                            selected && styles.teamOptionTextSelected,
+                          ]}
+                        >
+                          {team.name}
+                        </Text>
+                        <Text style={styles.teamRole}>{team.role}</Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.radioOuter,
+                          selected && styles.radioOuterSelected,
+                        ]}
+                      >
+                        {selected && <View style={styles.radioInner} />}
+                      </View>
+                    </Pressable>
+                  );
+                })}
 
                 {teams.length === 0 && (
                   <Text style={styles.subtitle}>
@@ -354,43 +455,56 @@ export default function ProjectsScreen() {
                 )}
 
                 <Text style={styles.label}>Nome do projeto</Text>
-
                 <TextInput
                   accessibilityLabel="Nome do projeto"
                   style={styles.input}
                   value={projectName}
                   onChangeText={setProjectName}
                   placeholder="Ex.: Aplicativo móvel"
+                  placeholderTextColor={colors.muted}
                   maxLength={150}
+                  editable={!createProject.isPending}
                 />
 
                 <Text style={styles.label}>Descrição (opcional)</Text>
-
                 <TextInput
                   accessibilityLabel="Descrição do projeto"
                   style={[styles.input, styles.multiline]}
                   value={description}
                   onChangeText={setDescription}
                   placeholder="Qual é o objetivo do projeto?"
+                  placeholderTextColor={colors.muted}
                   multiline
                   maxLength={5000}
                   textAlignVertical="top"
+                  editable={!createProject.isPending}
                 />
               </>
             )}
 
-            {!!formError && <Text style={styles.errorText}>{formError}</Text>}
+            {!!formError && (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{formError}</Text>
+              </View>
+            )}
 
             <View style={styles.modalActions}>
               <Pressable
                 style={styles.cancelButton}
                 onPress={() => setModal(null)}
+                disabled={createTeam.isPending || createProject.isPending}
               >
                 <Text style={styles.cancelButtonLabel}>Cancelar</Text>
               </Pressable>
 
               <Pressable
-                style={styles.primaryButton}
+                style={[
+                  styles.primaryButton,
+                  (createTeam.isPending ||
+                    createProject.isPending ||
+                    (modal === "project" && teams.length === 0)) &&
+                    styles.disabled,
+                ]}
                 disabled={
                   createTeam.isPending ||
                   createProject.isPending ||
@@ -415,37 +529,66 @@ export default function ProjectsScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#F5F7FB",
+    backgroundColor: colors.background,
     paddingTop: 52,
   },
   header: {
     paddingHorizontal: 22,
-    paddingBottom: 26,
+    paddingBottom: 22,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  brandGroup: {
+    flex: 1,
+  },
+  wordmark: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   brand: {
-    fontSize: 29,
+    fontSize: 24,
     fontWeight: "800",
-    color: "#2459D3",
+    letterSpacing: -1.1,
+    color: colors.text,
+  },
+  wordmarkDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.accent,
+    marginTop: 9,
   },
   greeting: {
-    marginTop: 6,
-    fontSize: 14,
-    color: "#5B6474",
+    marginTop: 4,
+    fontSize: 13,
+    color: colors.secondary,
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
   textButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
   },
   textButtonLabel: {
-    color: "#2459D3",
-    fontWeight: "700",
+    color: colors.secondary,
+    fontWeight: "600",
+    fontSize: 13,
+  },
+  headerDivider: {
+    width: 1,
+    height: 16,
+    backgroundColor: colors.border,
   },
   sectionHeader: {
     paddingHorizontal: 22,
-    marginBottom: 16,
+    paddingVertical: 20,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -455,143 +598,237 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 23,
-    fontWeight: "800",
-    color: "#172033",
+    fontSize: 22,
+    fontWeight: "700",
+    letterSpacing: -0.6,
+    color: colors.text,
   },
   subtitle: {
-    marginTop: 5,
-    color: "#667085",
-    fontSize: 14,
-    lineHeight: 21,
+    marginTop: 4,
+    color: colors.secondary,
+    fontSize: 13,
+    lineHeight: 18,
   },
   primaryButton: {
-    backgroundColor: "#2459D3",
+    backgroundColor: colors.accent,
     borderRadius: 10,
-    paddingVertical: 11,
-    paddingHorizontal: 15,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 5,
+  },
+  primaryButtonPressed: {
+    backgroundColor: colors.accentDark,
+    transform: [{ scale: 0.98 }],
+  },
+  primaryButtonPlus: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    lineHeight: 16,
+    fontWeight: "500",
   },
   primaryButtonLabel: {
     color: "#FFFFFF",
     fontWeight: "700",
+    fontSize: 13,
   },
   list: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 22,
     paddingBottom: 32,
-    gap: 13,
+    gap: 12,
   },
-  loader: {
+  loaderState: {
     marginTop: 60,
+    alignItems: "center",
+    gap: 10,
+  },
+  loaderText: {
+    color: colors.secondary,
+    fontSize: 13,
   },
   projectCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 15,
+    backgroundColor: colors.surface,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E7EAF1",
+    borderColor: colors.border,
     padding: 16,
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
   },
+  projectCardPressed: {
+    backgroundColor: colors.surfaceMuted,
+    borderColor: "#D8C7BC",
+  },
   pressed: {
     opacity: 0.75,
   },
-  projectIcon: {
+  projectInitialWrap: {
     width: 48,
     height: 48,
-    borderRadius: 13,
-    backgroundColor: "#E7EEFF",
+    borderRadius: 11,
     alignItems: "center",
     justifyContent: "center",
   },
-  projectIconLabel: {
-    fontSize: 21,
-    fontWeight: "800",
-    color: "#2459D3",
+  projectInitial: {
+    fontSize: 22,
+    fontWeight: "700",
+    letterSpacing: -0.6,
   },
   projectInfo: {
     flex: 1,
+    gap: 3,
   },
   projectName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
-    color: "#172033",
+    color: colors.text,
+    letterSpacing: -0.3,
   },
   teamName: {
-    fontSize: 13,
-    color: "#667085",
+    fontSize: 12,
+    color: colors.secondary,
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
     marginTop: 4,
+  },
+  taskStatusDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: colors.accent,
   },
   taskCount: {
     fontSize: 12,
-    color: "#2459D3",
-    marginTop: 7,
+    color: colors.secondary,
   },
   chevron: {
-    fontSize: 28,
-    color: "#98A2B3",
+    fontSize: 24,
+    color: colors.muted,
   },
   emptyState: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 15,
-    padding: 24,
+    backgroundColor: colors.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 22,
     alignItems: "flex-start",
-    gap: 10,
+    gap: 8,
+  },
+  emptyEyebrow: {
+    color: colors.accent,
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 1.4,
   },
   emptyTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#172033",
+    color: colors.text,
   },
   secondaryButton: {
     alignSelf: "flex-start",
     borderWidth: 1,
-    borderColor: "#2459D3",
+    borderColor: colors.border,
     borderRadius: 10,
-    paddingHorizontal: 15,
-    paddingVertical: 11,
-    marginTop: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginTop: 6,
+    backgroundColor: colors.surface,
+  },
+  secondaryButtonFull: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    marginTop: 4,
   },
   secondaryButtonLabel: {
-    color: "#2459D3",
+    color: colors.text,
     fontWeight: "700",
+    fontSize: 13,
   },
   modalBackdrop: {
     flex: 1,
     justifyContent: "flex-end",
-    backgroundColor: "rgba(14, 24, 44, 0.45)",
+    backgroundColor: "rgba(36, 37, 31, 0.42)",
+  },
+  backdropTouch: {
+    flex: 1,
   },
   modalCard: {
-    backgroundColor: "#FFFFFF",
-    padding: 24,
-    paddingBottom: 34,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    gap: 10,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 22,
+    paddingTop: 12,
+    paddingBottom: 32,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    gap: 12,
     maxHeight: "90%",
   },
-  modalTitle: {
-    fontSize: 23,
-    fontWeight: "800",
-    color: "#172033",
+  modalHandle: {
+    width: 35,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: "#D8D5CC",
+    alignSelf: "center",
     marginBottom: 8,
   },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 6,
+  },
+  modalHeadingGroup: {
+    flex: 1,
+    gap: 4,
+  },
+  modalEyebrow: {
+    color: colors.accent,
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 1.4,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: colors.text,
+    letterSpacing: -0.5,
+  },
+  closeButton: {
+    width: 30,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  closeButtonText: {
+    color: colors.secondary,
+    fontSize: 24,
+    lineHeight: 24,
+  },
   label: {
-    color: "#263247",
-    fontSize: 14,
-    fontWeight: "600",
-    marginTop: 5,
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "700",
+    marginTop: 4,
   },
   input: {
     minHeight: 48,
     borderWidth: 1,
-    borderColor: "#DCE2EC",
+    borderColor: colors.border,
     borderRadius: 10,
-    paddingHorizontal: 13,
+    paddingHorizontal: 14,
     fontSize: 15,
-    color: "#172033",
+    color: colors.text,
+    backgroundColor: colors.surface,
   },
   multiline: {
     minHeight: 84,
@@ -599,45 +836,80 @@ const styles = StyleSheet.create({
   },
   teamOption: {
     borderWidth: 1,
-    borderColor: "#DCE2EC",
+    borderColor: colors.border,
     borderRadius: 10,
     padding: 12,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    backgroundColor: colors.surface,
   },
   teamOptionSelected: {
-    borderColor: "#2459D3",
-    backgroundColor: "#F0F4FF",
+    borderColor: colors.accent,
+    backgroundColor: "#F7E9E1",
+  },
+  teamOptionContent: {
+    flex: 1,
+    gap: 2,
   },
   teamOptionText: {
-    color: "#263247",
+    color: colors.text,
     fontWeight: "600",
+    fontSize: 14,
   },
   teamOptionTextSelected: {
-    color: "#2459D3",
+    color: colors.accentDark,
+    fontWeight: "700",
   },
   teamRole: {
-    color: "#667085",
+    color: colors.secondary,
     fontSize: 11,
   },
+  radioOuter: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderColor: colors.muted,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  radioOuterSelected: {
+    borderColor: colors.accent,
+  },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.accent,
+  },
+  errorContainer: {
+    backgroundColor: "#FBEDEA",
+    padding: 10,
+    borderRadius: 8,
+  },
   errorText: {
-    color: "#B42318",
+    color: "#B54738",
     fontSize: 13,
+    fontWeight: "600",
   },
   modalActions: {
     flexDirection: "row",
     justifyContent: "flex-end",
     alignItems: "center",
-    gap: 12,
-    marginTop: 12,
+    gap: 10,
+    marginTop: 10,
   },
   cancelButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 13,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
   },
   cancelButtonLabel: {
-    color: "#475467",
+    color: colors.secondary,
     fontWeight: "600",
+    fontSize: 13,
+  },
+  disabled: {
+    opacity: 0.65,
   },
 });
