@@ -51,6 +51,8 @@ export class BoardService {
                     task.position,
                   completedAt:
                     task.completedAt,
+                  description:
+                    task.description,
 
                   assignee:
                     task.assignee,

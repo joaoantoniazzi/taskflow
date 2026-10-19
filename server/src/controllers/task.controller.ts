@@ -56,11 +56,11 @@ export class TaskController {
     request: Request,
     response: Response,
   ) => {
-    const task =
-      await taskService.update(
-        request.params.taskId,
-        request.body,
-      );
+    const task = await taskService.update(
+      request.params.taskId,
+      request.user!.id,
+      request.body,
+    );
 
     response.status(200).json({
       task,

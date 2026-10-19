@@ -305,7 +305,8 @@ export class TaskService {
 
   async update(
     taskId: string,
-    input: UpdateTaskInput,
+    userId: string,
+    input: CreateTaskInput,
   ) {
     const task =
       await taskRepository.findById(
@@ -325,9 +326,9 @@ export class TaskService {
      * ele precisa estar na equipe.
      */
     if (
-      input.assigneeId !==
+      userId !==
         undefined &&
-      input.assigneeId !==
+      userId !==
         null
     ) {
       const membership =
@@ -335,7 +336,7 @@ export class TaskService {
           .findMembership(
             task.column.board.project
               .teamId,
-            input.assigneeId,
+            userId,
           );
 
       if (!membership) {
