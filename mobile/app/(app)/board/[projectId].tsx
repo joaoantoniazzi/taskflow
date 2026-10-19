@@ -287,40 +287,52 @@ export default function BoardScreen() {
 
                 return (
                   <View key={task.id} style={styles.taskCard}>
-                    <View style={styles.taskTopRow}>
-                      <Text style={styles.taskTitle}>{task.title}</Text>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Abrir tarefa ${task.title}`}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/(app)/task/[taskId]",
+                          params: { taskId: task.id },
+                        })
+                      }
+                      style={styles.taskCardContent}
+                    >
+                      <View style={styles.taskTopRow}>
+                        <Text style={styles.taskTitle}>{task.title}</Text>
 
-                      <View
-                        style={[
-                          styles.priorityBadge,
-                          task.priority === "HIGH" && styles.highPriority,
-                          task.priority === "LOW" && styles.lowPriority,
-                        ]}
-                      >
-                        <Text style={styles.priorityText}>
-                          {priorityLabels[task.priority]}
-                        </Text>
+                        <View
+                          style={[
+                            styles.priorityBadge,
+                            task.priority === "HIGH" && styles.highPriority,
+                            task.priority === "LOW" && styles.lowPriority,
+                          ]}
+                        >
+                          <Text style={styles.priorityText}>
+                            {priorityLabels[task.priority]}
+                          </Text>
+                        </View>
                       </View>
-                    </View>
 
-                    {task.description ? (
-                      <Text style={styles.taskDescription}>
-                        {task.description}
-                      </Text>
-                    ) : null}
+                      {task.description ? (
+                        <Text style={styles.taskDescription}>
+                          {task.description}
+                        </Text>
+                      ) : null}
 
-                    {task.assignee && (
-                      <Text style={styles.taskMeta}>
-                        Responsável: {task.assignee.name}
-                      </Text>
-                    )}
+                      {task.assignee && (
+                        <Text style={styles.taskMeta}>
+                          Responsável: {task.assignee.name}
+                        </Text>
+                      )}
 
-                    {task.dueDate && (
-                      <Text style={styles.taskMeta}>
-                        Prazo:{" "}
-                        {new Date(task.dueDate).toLocaleDateString("pt-BR")}
-                      </Text>
-                    )}
+                      {task.dueDate && (
+                        <Text style={styles.taskMeta}>
+                          Prazo:{" "}
+                          {new Date(task.dueDate).toLocaleDateString("pt-BR")}
+                        </Text>
+                      )}
+                    </Pressable>
 
                     <View style={styles.moveActions}>
                       {previousColumn && (
@@ -751,5 +763,8 @@ const styles = StyleSheet.create({
   cancelText: {
     color: "#475467",
     fontWeight: "600",
+  },
+  taskCardContent: {
+    gap: 10,
   },
 });

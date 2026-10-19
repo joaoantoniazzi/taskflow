@@ -163,6 +163,14 @@ export default function ProjectsScreen() {
 
         <Pressable
           accessibilityRole="button"
+          style={styles.textButton}
+          onPress={() => router.push("/(app)/notifications")}
+        >
+          <Text style={styles.textButtonLabel}>Avisos</Text>
+        </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
           onPress={() => void signOut()}
           style={styles.textButton}
         >
