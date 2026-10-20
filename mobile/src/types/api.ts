@@ -69,3 +69,32 @@ export interface Board {
   projectId: string;
   columns: BoardColumn[];
 }
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl: string | null;
+  role: "OWNER" | "ADMIN" | "MEMBER";
+  joinedAt: string;
+}
+
+export interface TeamDetail {
+  id: string;
+  name: string;
+  memberCount: number;
+  projectCount: number;
+  requesterRole: "OWNER" | "ADMIN" | "MEMBER";
+  members: TeamMember[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}

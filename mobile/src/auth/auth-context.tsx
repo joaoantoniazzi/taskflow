@@ -24,6 +24,8 @@ interface AuthContextValue {
   register(name: string, email: string, password: string): Promise<void>;
 
   signOut(): Promise<void>;
+
+  updateUser(user: User): Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -158,6 +160,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const updateUser = useCallback(async (updatedUser: User) => {
+    const current = await readSession();
+
+    if (current) {
+      await writeSession({
+        ...current,
+        user: updatedUser,
+      });
+    }
+
+    setUser(updatedUser);
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -166,6 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signIn,
         register,
         signOut,
+        updateUser,
       }}
     >
       {children}

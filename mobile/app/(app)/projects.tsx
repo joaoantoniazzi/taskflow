@@ -35,6 +35,7 @@ const colors = {
   border: "#E7E5DE",
   accent: "#C65D32",
   accentDark: "#A84926",
+  accentSoft: "#F7E9E1",
 };
 
 const projectPalettes = [
@@ -188,28 +189,48 @@ export default function ProjectsScreen() {
         <View style={styles.headerActions}>
           <Pressable
             accessibilityRole="button"
-            style={({ pressed }) => [
-              styles.textButton,
-              pressed && styles.pressed,
-            ]}
-            onPress={() => router.push("/(app)/notifications")}
-          >
-            <Text style={styles.textButtonLabel}>Avisos</Text>
-          </Pressable>
-
-          <View style={styles.headerDivider} />
-
-          <Pressable
-            accessibilityRole="button"
             onPress={() => void signOut()}
             style={({ pressed }) => [
               styles.textButton,
               pressed && styles.pressed,
             ]}
+            hitSlop={10}
           >
             <Text style={styles.textButtonLabel}>Sair ↗</Text>
           </Pressable>
         </View>
+      </View>
+
+      <View style={styles.quickActions}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.quickAction,
+            pressed && styles.pressed,
+          ]}
+          onPress={() => router.push("/(app)/teams")}
+        >
+          <Text style={styles.quickActionText}>Equipes</Text>
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.quickAction,
+            pressed && styles.pressed,
+          ]}
+          onPress={() => router.push("/(app)/profile")}
+        >
+          <Text style={styles.quickActionText}>Perfil</Text>
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.quickAction,
+            pressed && styles.pressed,
+          ]}
+          onPress={() => router.push("/(app)/notifications")}
+        >
+          <Text style={styles.quickActionText}>Avisos</Text>
+        </Pressable>
       </View>
 
       <View style={styles.sectionHeader}>
@@ -347,7 +368,10 @@ export default function ProjectsScreen() {
 
         {!loading && teams.length === 0 && projects.length > 0 && (
           <Pressable
-            style={styles.secondaryButtonFull}
+            style={({ pressed }) => [
+              styles.secondaryButtonFull,
+              pressed && styles.pressed,
+            ]}
             onPress={() => {
               setFormError("");
               setModal("team");
@@ -395,130 +419,137 @@ export default function ProjectsScreen() {
               </Pressable>
             </View>
 
-            {modal === "team" ? (
-              <>
-                <Text style={styles.label}>Nome da equipe</Text>
-                <TextInput
-                  accessibilityLabel="Nome da equipe"
-                  style={styles.input}
-                  value={teamName}
-                  onChangeText={setTeamName}
-                  placeholder="Ex.: Equipe de desenvolvimento"
-                  placeholderTextColor={colors.muted}
-                  editable={!createTeam.isPending}
-                  maxLength={120}
-                  autoCapitalize="words"
-                />
-              </>
-            ) : (
-              <>
-                <Text style={styles.label}>Equipe responsável</Text>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.modalScrollContent}
+            >
+              {modal === "team" ? (
+                <>
+                  <Text style={styles.label}>Nome da equipe</Text>
+                  <TextInput
+                    accessibilityLabel="Nome da equipe"
+                    style={styles.input}
+                    value={teamName}
+                    onChangeText={setTeamName}
+                    placeholder="Ex.: Equipe de desenvolvimento"
+                    placeholderTextColor={colors.muted}
+                    editable={!createTeam.isPending}
+                    maxLength={120}
+                    autoCapitalize="words"
+                  />
+                </>
+              ) : (
+                <>
+                  <Text style={styles.label}>Equipe responsável</Text>
 
-                {teams.map((team) => {
-                  const selected = selectedTeamId === team.id;
-                  return (
-                    <Pressable
-                      key={team.id}
-                      style={[
-                        styles.teamOption,
-                        selected && styles.teamOptionSelected,
-                      ]}
-                      onPress={() => setSelectedTeamId(team.id)}
-                    >
-                      <View style={styles.teamOptionContent}>
-                        <Text
+                  <View style={styles.teamOptionsList}>
+                    {teams.map((team) => {
+                      const selected = selectedTeamId === team.id;
+                      return (
+                        <Pressable
+                          key={team.id}
                           style={[
-                            styles.teamOptionText,
-                            selected && styles.teamOptionTextSelected,
+                            styles.teamOption,
+                            selected && styles.teamOptionSelected,
                           ]}
+                          onPress={() => setSelectedTeamId(team.id)}
                         >
-                          {team.name}
-                        </Text>
-                        <Text style={styles.teamRole}>{team.role}</Text>
-                      </View>
-                      <View
-                        style={[
-                          styles.radioOuter,
-                          selected && styles.radioOuterSelected,
-                        ]}
-                      >
-                        {selected && <View style={styles.radioInner} />}
-                      </View>
-                    </Pressable>
-                  );
-                })}
+                          <View style={styles.teamOptionContent}>
+                            <Text
+                              style={[
+                                styles.teamOptionText,
+                                selected && styles.teamOptionTextSelected,
+                              ]}
+                            >
+                              {team.name}
+                            </Text>
+                            <Text style={styles.teamRole}>{team.role}</Text>
+                          </View>
+                          <View
+                            style={[
+                              styles.radioOuter,
+                              selected && styles.radioOuterSelected,
+                            ]}
+                          >
+                            {selected && <View style={styles.radioInner} />}
+                          </View>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
 
-                {teams.length === 0 && (
-                  <Text style={styles.subtitle}>
-                    Você precisa criar uma equipe primeiro.
-                  </Text>
-                )}
+                  {teams.length === 0 && (
+                    <Text style={styles.subtitle}>
+                      Você precisa criar uma equipe primeiro.
+                    </Text>
+                  )}
 
-                <Text style={styles.label}>Nome do projeto</Text>
-                <TextInput
-                  accessibilityLabel="Nome do projeto"
-                  style={styles.input}
-                  value={projectName}
-                  onChangeText={setProjectName}
-                  placeholder="Ex.: Aplicativo móvel"
-                  placeholderTextColor={colors.muted}
-                  maxLength={150}
-                  editable={!createProject.isPending}
-                />
+                  <Text style={styles.label}>Nome do projeto</Text>
+                  <TextInput
+                    accessibilityLabel="Nome do projeto"
+                    style={styles.input}
+                    value={projectName}
+                    onChangeText={setProjectName}
+                    placeholder="Ex.: Aplicativo móvel"
+                    placeholderTextColor={colors.muted}
+                    maxLength={150}
+                    editable={!createProject.isPending}
+                  />
 
-                <Text style={styles.label}>Descrição (opcional)</Text>
-                <TextInput
-                  accessibilityLabel="Descrição do projeto"
-                  style={[styles.input, styles.multiline]}
-                  value={description}
-                  onChangeText={setDescription}
-                  placeholder="Qual é o objetivo do projeto?"
-                  placeholderTextColor={colors.muted}
-                  multiline
-                  maxLength={5000}
-                  textAlignVertical="top"
-                  editable={!createProject.isPending}
-                />
-              </>
-            )}
+                  <Text style={styles.label}>Descrição (opcional)</Text>
+                  <TextInput
+                    accessibilityLabel="Descrição do projeto"
+                    style={[styles.input, styles.multiline]}
+                    value={description}
+                    onChangeText={setDescription}
+                    placeholder="Qual é o objetivo do projeto?"
+                    placeholderTextColor={colors.muted}
+                    multiline
+                    maxLength={5000}
+                    textAlignVertical="top"
+                    editable={!createProject.isPending}
+                  />
+                </>
+              )}
 
-            {!!formError && (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{formError}</Text>
-              </View>
-            )}
+              {!!formError && (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText}>{formError}</Text>
+                </View>
+              )}
 
-            <View style={styles.modalActions}>
-              <Pressable
-                style={styles.cancelButton}
-                onPress={() => setModal(null)}
-                disabled={createTeam.isPending || createProject.isPending}
-              >
-                <Text style={styles.cancelButtonLabel}>Cancelar</Text>
-              </Pressable>
+              <View style={styles.modalActions}>
+                <Pressable
+                  style={styles.cancelButton}
+                  onPress={() => setModal(null)}
+                  disabled={createTeam.isPending || createProject.isPending}
+                >
+                  <Text style={styles.cancelButtonLabel}>Cancelar</Text>
+                </Pressable>
 
-              <Pressable
-                style={[
-                  styles.primaryButton,
-                  (createTeam.isPending ||
+                <Pressable
+                  style={[
+                    styles.primaryButton,
+                    (createTeam.isPending ||
+                      createProject.isPending ||
+                      (modal === "project" && teams.length === 0)) &&
+                      styles.disabled,
+                  ]}
+                  disabled={
+                    createTeam.isPending ||
                     createProject.isPending ||
-                    (modal === "project" && teams.length === 0)) &&
-                    styles.disabled,
-                ]}
-                disabled={
-                  createTeam.isPending ||
-                  createProject.isPending ||
-                  (modal === "project" && teams.length === 0)
-                }
-                onPress={modal === "team" ? submitTeam : submitProject}
-              >
-                {createTeam.isPending || createProject.isPending ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.primaryButtonLabel}>Criar</Text>
-                )}
-              </Pressable>
-            </View>
+                    (modal === "project" && teams.length === 0)
+                  }
+                  onPress={modal === "team" ? submitTeam : submitProject}
+                >
+                  {createTeam.isPending || createProject.isPending ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.primaryButtonLabel}>Criar</Text>
+                  )}
+                </Pressable>
+              </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -534,12 +565,10 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 22,
-    paddingBottom: 22,
+    paddingBottom: 14,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   brandGroup: {
     flex: 1,
@@ -550,9 +579,9 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   brand: {
-    fontSize: 24,
-    fontWeight: "800",
-    letterSpacing: -1.1,
+    fontSize: 22,
+    fontWeight: "700",
+    letterSpacing: -0.6,
     color: colors.text,
   },
   wordmarkDot: {
@@ -560,35 +589,51 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     backgroundColor: colors.accent,
-    marginTop: 9,
+    marginTop: 8,
   },
   greeting: {
-    marginTop: 4,
+    marginTop: 2,
     fontSize: 13,
     color: colors.secondary,
   },
   headerActions: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
   },
   textButton: {
     paddingVertical: 8,
     paddingHorizontal: 4,
   },
   textButtonLabel: {
-    color: colors.secondary,
-    fontWeight: "600",
+    color: colors.accent,
+    fontWeight: "700",
     fontSize: 13,
   },
-  headerDivider: {
-    width: 1,
-    height: 16,
-    backgroundColor: colors.border,
+  quickActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    paddingHorizontal: 22,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  quickAction: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  quickActionText: {
+    color: colors.accent,
+    fontWeight: "700",
+    fontSize: 12,
   },
   sectionHeader: {
     paddingHorizontal: 22,
-    paddingVertical: 20,
+    paddingVertical: 18,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -625,8 +670,8 @@ const styles = StyleSheet.create({
   },
   primaryButtonPlus: {
     color: "#FFFFFF",
-    fontSize: 16,
-    lineHeight: 16,
+    fontSize: 15,
+    lineHeight: 15,
     fontWeight: "500",
   },
   primaryButtonLabel: {
@@ -663,7 +708,7 @@ const styles = StyleSheet.create({
     borderColor: "#D8C7BC",
   },
   pressed: {
-    opacity: 0.75,
+    opacity: 0.7,
   },
   projectInitialWrap: {
     width: 48,
@@ -730,6 +775,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: colors.text,
+    letterSpacing: -0.4,
   },
   secondaryButton: {
     alignSelf: "flex-start",
@@ -738,7 +784,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    marginTop: 6,
+    marginTop: 4,
     backgroundColor: colors.surface,
   },
   secondaryButtonFull: {
@@ -770,8 +816,8 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22,
-    gap: 12,
     maxHeight: "90%",
+    gap: 12,
   },
   modalHandle: {
     width: 35,
@@ -779,13 +825,13 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: "#D8D5CC",
     alignSelf: "center",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 6,
+    marginBottom: 4,
   },
   modalHeadingGroup: {
     flex: 1,
@@ -814,6 +860,10 @@ const styles = StyleSheet.create({
     fontSize: 24,
     lineHeight: 24,
   },
+  modalScrollContent: {
+    paddingBottom: 20,
+    gap: 10,
+  },
   label: {
     color: colors.text,
     fontSize: 13,
@@ -834,6 +884,9 @@ const styles = StyleSheet.create({
     minHeight: 84,
     paddingVertical: 12,
   },
+  teamOptionsList: {
+    gap: 8,
+  },
   teamOption: {
     borderWidth: 1,
     borderColor: colors.border,
@@ -846,7 +899,7 @@ const styles = StyleSheet.create({
   },
   teamOptionSelected: {
     borderColor: colors.accent,
-    backgroundColor: "#F7E9E1",
+    backgroundColor: colors.accentSoft,
   },
   teamOptionContent: {
     flex: 1,
@@ -898,7 +951,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     alignItems: "center",
     gap: 10,
-    marginTop: 10,
+    marginTop: 12,
   },
   cancelButton: {
     paddingVertical: 11,

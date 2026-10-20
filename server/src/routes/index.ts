@@ -7,36 +7,24 @@ import projectRouter from "./project.routes.js";
 import taskRouter from "./task.routes.js";
 import commentRouter from "./comment.routes.js";
 import notificationRouter from "./notification.routes.js";
+import userRouter from "./user.routes.js";
 
 const router = Router();
 
-router.use(
-  "/health",
-  healthRouter,
-);
+router.use("/health", healthRouter);
 
-router.use(
-  "/auth",
-  authRouter,
-);
+router.use("/auth", authRouter);
 
-router.use(
-  "/teams",
-  teamRouter,
-);
+router.use("/teams", teamRouter);
 
-router.use(
-  "/projects",
-  projectRouter,
-);
+router.use("/projects", projectRouter);
 
-router.use(
-  "/tasks",
-  taskRouter,
-);
+router.use("/tasks", taskRouter);
 
 router.use(commentRouter);
 
 router.use("/notifications", notificationRouter);
+
+router.use("/users", userRouter);
 
 export default router;
