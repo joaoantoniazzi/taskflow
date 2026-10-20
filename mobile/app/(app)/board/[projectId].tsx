@@ -1,7 +1,9 @@
 import { useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -426,120 +428,127 @@ export default function BoardScreen() {
         }}
         statusBarTranslucent
       >
-        <View style={styles.modalBackdrop}>
-          <Pressable
-            style={styles.backdropTouch}
-            onPress={() => {
-              if (!createTask.isPending) setModalVisible(false);
-            }}
-          />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.keyboardAvoidingView}
+        >
+          <View style={styles.modalBackdrop}>
+            <Pressable
+              style={styles.backdropTouch}
+              onPress={() => {
+                if (!createTask.isPending) setModalVisible(false);
+              }}
+            />
 
-          <View style={styles.modalCard}>
-            <View style={styles.modalHandle} />
+            <View style={styles.modalCard}>
+              <View style={styles.modalHandle} />
 
-            <View style={styles.modalHeader}>
-              <View style={styles.modalHeadingGroup}>
-                <Text style={styles.modalEyebrow}>TASKFLOW / BOARD</Text>
-                <Text style={styles.modalTitle}>Nova tarefa</Text>
-              </View>
-
-              <Pressable
-                style={styles.closeButton}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={styles.closeButtonText}>×</Text>
-              </Pressable>
-            </View>
-
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.modalScrollContent}
-            >
-              <Text style={styles.label}>Título</Text>
-              <TextInput
-                accessibilityLabel="Título da tarefa"
-                style={styles.input}
-                value={title}
-                onChangeText={setTitle}
-                placeholder="Ex.: Implementar login"
-                placeholderTextColor={colors.muted}
-                maxLength={200}
-                editable={!createTask.isPending}
-              />
-
-              <Text style={styles.label}>Descrição (opcional)</Text>
-              <TextInput
-                accessibilityLabel="Descrição da tarefa"
-                style={[styles.input, styles.multiline]}
-                value={description}
-                onChangeText={setDescription}
-                placeholder="Detalhes da atividade"
-                placeholderTextColor={colors.muted}
-                multiline
-                maxLength={10000}
-                textAlignVertical="top"
-                editable={!createTask.isPending}
-              />
-
-              <Text style={styles.label}>Prioridade</Text>
-              <View style={styles.priorityOptions}>
-                {(["LOW", "MEDIUM", "HIGH"] as const).map((value) => {
-                  const selected = priority === value;
-                  return (
-                    <Pressable
-                      key={value}
-                      style={[
-                        styles.priorityOption,
-                        selected && styles.priorityOptionSelected,
-                      ]}
-                      onPress={() => setPriority(value)}
-                    >
-                      <Text
-                        style={[
-                          styles.priorityOptionText,
-                          selected && styles.priorityOptionTextSelected,
-                        ]}
-                      >
-                        {priorityLabels[value]}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-
-              {!!formError && (
-                <View style={styles.errorContainer}>
-                  <Text style={styles.formError}>{formError}</Text>
+              <View style={styles.modalHeader}>
+                <View style={styles.modalHeadingGroup}>
+                  <Text style={styles.modalEyebrow}>TASKFLOW / BOARD</Text>
+                  <Text style={styles.modalTitle}>Nova tarefa</Text>
                 </View>
-              )}
 
-              <View style={styles.modalActions}>
                 <Pressable
-                  style={styles.cancelButton}
+                  style={styles.closeButton}
                   onPress={() => setModalVisible(false)}
-                  disabled={createTask.isPending}
                 >
-                  <Text style={styles.cancelText}>Cancelar</Text>
-                </Pressable>
-
-                <Pressable
-                  style={[
-                    styles.primaryButton,
-                    createTask.isPending && styles.disabled,
-                  ]}
-                  disabled={createTask.isPending}
-                  onPress={handleCreateTask}
-                >
-                  {createTask.isPending ? (
-                    <ActivityIndicator color="#FFFFFF" />
-                  ) : (
-                    <Text style={styles.primaryButtonText}>Criar tarefa</Text>
-                  )}
+                  <Text style={styles.closeButtonText}>×</Text>
                 </Pressable>
               </View>
-            </ScrollView>
+
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.modalScrollContent}
+                keyboardShouldPersistTaps="handled"
+                bounces={false}
+              >
+                <Text style={styles.label}>Título</Text>
+                <TextInput
+                  accessibilityLabel="Título da tarefa"
+                  style={styles.input}
+                  value={title}
+                  onChangeText={setTitle}
+                  placeholder="Ex.: Implementar login"
+                  placeholderTextColor={colors.muted}
+                  maxLength={200}
+                  editable={!createTask.isPending}
+                />
+
+                <Text style={styles.label}>Descrição (opcional)</Text>
+                <TextInput
+                  accessibilityLabel="Descrição da tarefa"
+                  style={[styles.input, styles.multiline]}
+                  value={description}
+                  onChangeText={setDescription}
+                  placeholder="Detalhes da atividade"
+                  placeholderTextColor={colors.muted}
+                  multiline
+                  maxLength={10000}
+                  textAlignVertical="top"
+                  editable={!createTask.isPending}
+                />
+
+                <Text style={styles.label}>Prioridade</Text>
+                <View style={styles.priorityOptions}>
+                  {(["LOW", "MEDIUM", "HIGH"] as const).map((value) => {
+                    const selected = priority === value;
+                    return (
+                      <Pressable
+                        key={value}
+                        style={[
+                          styles.priorityOption,
+                          selected && styles.priorityOptionSelected,
+                        ]}
+                        onPress={() => setPriority(value)}
+                      >
+                        <Text
+                          style={[
+                            styles.priorityOptionText,
+                            selected && styles.priorityOptionTextSelected,
+                          ]}
+                        >
+                          {priorityLabels[value]}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+
+                {!!formError && (
+                  <View style={styles.errorContainer}>
+                    <Text style={styles.formError}>{formError}</Text>
+                  </View>
+                )}
+
+                <View style={styles.modalActions}>
+                  <Pressable
+                    style={styles.cancelButton}
+                    onPress={() => setModalVisible(false)}
+                    disabled={createTask.isPending}
+                  >
+                    <Text style={styles.cancelText}>Cancelar</Text>
+                  </Pressable>
+
+                  <Pressable
+                    style={[
+                      styles.primaryButton,
+                      createTask.isPending && styles.disabled,
+                    ]}
+                    disabled={createTask.isPending}
+                    onPress={handleCreateTask}
+                  >
+                    {createTask.isPending ? (
+                      <ActivityIndicator color="#FFFFFF" />
+                    ) : (
+                      <Text style={styles.primaryButtonText}>Criar tarefa</Text>
+                    )}
+                  </Pressable>
+                </View>
+              </ScrollView>
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -810,22 +819,25 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 13,
   },
+  keyboardAvoidingView: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
   modalBackdrop: {
     flex: 1,
     justifyContent: "flex-end",
     backgroundColor: "rgba(36, 37, 31, 0.42)",
   },
   backdropTouch: {
-    flex: 1,
+    ...StyleSheet.absoluteFill,
   },
   modalCard: {
     backgroundColor: colors.surface,
     paddingHorizontal: 22,
     paddingTop: 12,
-    paddingBottom: 32,
+    paddingBottom: Platform.OS === "ios" ? 34 : 24,
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22,
-    maxHeight: "90%",
     gap: 12,
   },
   modalHandle: {
@@ -870,7 +882,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   modalScrollContent: {
-    paddingBottom: 20,
+    paddingBottom: 10,
     gap: 10,
   },
   label: {

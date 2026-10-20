@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -131,9 +134,13 @@ export default function ProfileScreen() {
   }
 
   const initial = name.trim().charAt(0).toUpperCase() || "U";
+  const currentAvatar = avatarUrl.trim() || profile.avatarUrl;
 
   return (
-    <View style={styles.screen}>
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
       <View style={styles.header}>
         <Pressable
           onPress={() => router.back()}
@@ -152,9 +159,15 @@ export default function ProfileScreen() {
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        bounces={false}
       >
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initial}</Text>
+          {currentAvatar ? (
+            <Image source={{ uri: currentAvatar }} style={styles.avatarImage} />
+          ) : (
+            <Text style={styles.avatarText}>{initial}</Text>
+          )}
         </View>
 
         <Text style={styles.displayName}>{user?.name ?? profile.name}</Text>
@@ -245,7 +258,7 @@ export default function ProfileScreen() {
           <Text style={styles.signOutText}>Sair da conta</Text>
         </Pressable>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -282,6 +295,7 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     alignItems: "stretch",
     gap: 14,
+    paddingBottom: 40,
   },
   avatar: {
     alignSelf: "center",
@@ -293,6 +307,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
     borderColor: "#E5B8A8",
+    overflow: "hidden",
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
   },
   avatarText: {
     color: colors.accentDark,

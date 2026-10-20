@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -302,7 +303,11 @@ export default function TaskDetailScreen() {
   }
 
   return (
-    <View style={styles.screen}>
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      // keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0} // Ajuste opcional se houver header customizado
+    >
       <View style={styles.header}>
         <Pressable
           onPress={() => router.back()}
@@ -512,41 +517,48 @@ export default function TaskDetailScreen() {
           ))
         )}
 
-        <Text style={styles.label}>Adicionar comentário</Text>
+        <View style={styles.commentBox}>
+          <Text style={styles.label}>Adicionar comentário</Text>
 
-        <TextInput
-          accessibilityLabel="Novo comentário"
-          style={[styles.input, styles.commentInput]}
-          value={commentText}
-          onChangeText={setCommentText}
-          multiline
-          maxLength={10000}
-          textAlignVertical="top"
-          placeholder="Escreva um comentário..."
-          placeholderTextColor={colors.muted}
-        />
+          <TextInput
+            accessibilityLabel="Novo comentário"
+            style={[styles.input, styles.commentInput]}
+            value={commentText}
+            onChangeText={setCommentText}
+            multiline
+            maxLength={10000}
+            textAlignVertical="top"
+            placeholder="Escreva um comentário..."
+            placeholderTextColor={colors.muted}
+          />
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.secondaryButtonFull,
-            (createComment.isPending || !commentText.trim()) && styles.disabled,
-            pressed && styles.pressed,
-          ]}
-          disabled={createComment.isPending || !commentText.trim()}
-          onPress={handleAddComment}
-        >
-          {createComment.isPending ? (
-            <ActivityIndicator color={colors.accent} />
-          ) : (
-            <Text style={styles.secondaryButtonText}>Publicar comentário</Text>
+          <Pressable
+            style={({ pressed }) => [
+              styles.secondaryButtonFull,
+              (createComment.isPending || !commentText.trim()) &&
+                styles.disabled,
+              pressed && styles.pressed,
+            ]}
+            disabled={createComment.isPending || !commentText.trim()}
+            onPress={handleAddComment}
+          >
+            {createComment.isPending ? (
+              <ActivityIndicator color={colors.accent} />
+            ) : (
+              <Text style={styles.secondaryButtonText}>
+                Publicar comentário
+              </Text>
+            )}
+          </Pressable>
+
+          {createComment.isError && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>
+                {createComment.error.message}
+              </Text>
+            </View>
           )}
-        </Pressable>
-
-        {createComment.isError && (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{createComment.error.message}</Text>
-          </View>
-        )}
+        </View>
 
         <Text style={styles.footerMeta}>Criada por {task.createdBy.name}</Text>
       </ScrollView>
@@ -579,7 +591,7 @@ export default function TaskDetailScreen() {
           </View>
         </Modal>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -804,6 +816,15 @@ const styles = StyleSheet.create({
   commentDate: {
     color: colors.muted,
     fontSize: 11,
+  },
+  commentBox: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 14,
+    padding: 14,
+    gap: 8,
+    marginTop: 6,
   },
   commentInput: {
     minHeight: 85,

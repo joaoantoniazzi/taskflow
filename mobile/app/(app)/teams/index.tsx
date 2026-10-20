@@ -1,7 +1,9 @@
 import { useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -226,75 +228,87 @@ export default function TeamsScreen() {
         }}
         statusBarTranslucent
       >
-        <View style={styles.backdrop}>
-          <Pressable
-            style={styles.backdropTouch}
-            onPress={() => {
-              if (!createTeam.isPending) setModalVisible(false);
-            }}
-          />
-
-          <View style={styles.modal}>
-            <View style={styles.modalHandle} />
-
-            <View style={styles.modalHeader}>
-              <View style={styles.modalHeadingGroup}>
-                <Text style={styles.modalEyebrow}>TASKFLOW / TEAMS</Text>
-                <Text style={styles.title}>Nova equipe</Text>
-              </View>
-
-              <Pressable
-                style={styles.closeButton}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={styles.closeButtonText}>×</Text>
-              </Pressable>
-            </View>
-
-            <Text style={styles.label}>Nome da equipe</Text>
-            <TextInput
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-              placeholder="Ex.: Equipe de desenvolvimento"
-              placeholderTextColor={colors.muted}
-              maxLength={120}
-              autoCapitalize="words"
-              editable={!createTeam.isPending}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.keyboardAvoidingView}
+        >
+          <View style={styles.backdrop}>
+            <Pressable
+              style={styles.backdropTouch}
+              onPress={() => {
+                if (!createTeam.isPending) setModalVisible(false);
+              }}
             />
 
-            {!!error && (
-              <View style={styles.errorContainer}>
-                <Text style={styles.error}>{error}</Text>
+            <View style={styles.modal}>
+              <View style={styles.modalHandle} />
+
+              <View style={styles.modalHeader}>
+                <View style={styles.modalHeadingGroup}>
+                  <Text style={styles.modalEyebrow}>TASKFLOW / TEAMS</Text>
+                  <Text style={styles.title}>Nova equipe</Text>
+                </View>
+
+                <Pressable
+                  style={styles.closeButton}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.closeButtonText}>×</Text>
+                </Pressable>
               </View>
-            )}
 
-            <View style={styles.actions}>
-              <Pressable
-                onPress={() => setModalVisible(false)}
-                style={styles.cancel}
-                disabled={createTeam.isPending}
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.modalScrollContent}
+                keyboardShouldPersistTaps="handled"
+                bounces={false}
               >
-                <Text style={styles.cancelText}>Cancelar</Text>
-              </Pressable>
+                <Text style={styles.label}>Nome da equipe</Text>
+                <TextInput
+                  style={styles.input}
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="Ex.: Equipe de desenvolvimento"
+                  placeholderTextColor={colors.muted}
+                  maxLength={120}
+                  autoCapitalize="words"
+                  editable={!createTeam.isPending}
+                />
 
-              <Pressable
-                onPress={submit}
-                disabled={createTeam.isPending}
-                style={[
-                  styles.primaryButton,
-                  createTeam.isPending && styles.disabled,
-                ]}
-              >
-                {createTeam.isPending ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.primaryButtonText}>Criar equipe</Text>
+                {!!error && (
+                  <View style={styles.errorContainer}>
+                    <Text style={styles.error}>{error}</Text>
+                  </View>
                 )}
-              </Pressable>
+
+                <View style={styles.actions}>
+                  <Pressable
+                    onPress={() => setModalVisible(false)}
+                    style={styles.cancel}
+                    disabled={createTeam.isPending}
+                  >
+                    <Text style={styles.cancelText}>Cancelar</Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={submit}
+                    disabled={createTeam.isPending}
+                    style={[
+                      styles.primaryButton,
+                      createTeam.isPending && styles.disabled,
+                    ]}
+                  >
+                    {createTeam.isPending ? (
+                      <ActivityIndicator color="#FFFFFF" />
+                    ) : (
+                      <Text style={styles.primaryButtonText}>Criar equipe</Text>
+                    )}
+                  </Pressable>
+                </View>
+              </ScrollView>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -444,22 +458,31 @@ const styles = StyleSheet.create({
     color: colors.secondary,
     fontSize: 13,
   },
+  keyboardAvoidingView: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
   backdrop: {
     flex: 1,
     backgroundColor: "rgba(36, 37, 31, 0.42)",
     justifyContent: "flex-end",
   },
   backdropTouch: {
-    flex: 1,
+    ...StyleSheet.absoluteFill,
   },
   modal: {
     backgroundColor: colors.surface,
     paddingHorizontal: 22,
     paddingTop: 12,
-    paddingBottom: 32,
+    paddingBottom: Platform.OS === "ios" ? 34 : 24,
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22,
+    // Removido o maxHeight fixo para permitir flexibilidade total com o teclado
     gap: 12,
+  },
+  modalScrollContent: {
+    paddingBottom: 10,
+    gap: 10,
   },
   modalHandle: {
     width: 35,

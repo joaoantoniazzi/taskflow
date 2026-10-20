@@ -2,7 +2,10 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -286,23 +289,35 @@ export default function TeamDetailScreen() {
 
           const palette = memberPalettes[index % memberPalettes.length];
           const initial = member.name.trim().charAt(0).toUpperCase() || "U";
+          const memberAvatarUrl = member.avatarUrl;
 
           return (
             <View key={member.id} style={styles.memberCard}>
               <View
                 style={[
                   styles.memberAvatar,
-                  { backgroundColor: palette.background },
+                  {
+                    backgroundColor: memberAvatarUrl
+                      ? "transparent"
+                      : palette.background,
+                  },
                 ]}
               >
-                <Text
-                  style={[
-                    styles.memberAvatarText,
-                    { color: palette.foreground },
-                  ]}
-                >
-                  {initial}
-                </Text>
+                {memberAvatarUrl ? (
+                  <Image
+                    source={{ uri: memberAvatarUrl }}
+                    style={styles.memberAvatarImage}
+                  />
+                ) : (
+                  <Text
+                    style={[
+                      styles.memberAvatarText,
+                      { color: palette.foreground },
+                    ]}
+                  >
+                    {initial}
+                  </Text>
+                )}
               </View>
 
               <View style={styles.memberInfo}>
@@ -373,119 +388,131 @@ export default function TeamDetailScreen() {
         }}
         statusBarTranslucent
       >
-        <View style={styles.backdrop}>
-          <Pressable
-            style={styles.backdropTouch}
-            onPress={() => {
-              if (!addMember.isPending) setModalVisible(false);
-            }}
-          />
-
-          <View style={styles.modal}>
-            <View style={styles.modalHandle} />
-
-            <View style={styles.modalHeader}>
-              <View style={styles.modalHeadingGroup}>
-                <Text style={styles.modalEyebrow}>TASKFLOW / MEMBERS</Text>
-                <Text style={styles.heading}>Adicionar integrante</Text>
-              </View>
-
-              <Pressable
-                style={styles.closeButton}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={styles.closeButtonText}>×</Text>
-              </Pressable>
-            </View>
-
-            <Text style={styles.muted}>
-              Informe o e-mail de uma conta existente no TaskFlow.
-            </Text>
-
-            <Text style={styles.label}>E-mail</Text>
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              placeholder="usuario@exemplo.com"
-              placeholderTextColor={colors.muted}
-              editable={!addMember.isPending}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.keyboardAvoidingView}
+        >
+          <View style={styles.backdrop}>
+            <Pressable
+              style={styles.backdropTouch}
+              onPress={() => {
+                if (!addMember.isPending) setModalVisible(false);
+              }}
             />
 
-            {isOwner && (
-              <>
-                <Text style={styles.label}>Papel inicial</Text>
+            <View style={styles.modal}>
+              <View style={styles.modalHandle} />
 
-                <View style={styles.roleOptions}>
-                  {(["MEMBER", "ADMIN"] as const).map((role) => {
-                    const selected = memberRole === role;
-                    return (
-                      <Pressable
-                        key={role}
-                        style={[
-                          styles.roleOption,
-                          selected && styles.roleOptionSelected,
-                        ]}
-                        onPress={() => setMemberRole(role)}
-                      >
-                        <Text
-                          style={[
-                            styles.roleOptionText,
-                            selected && styles.roleOptionTextSelected,
-                          ]}
-                        >
-                          {role === "ADMIN" ? "Administrador" : "Membro"}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
+              <View style={styles.modalHeader}>
+                <View style={styles.modalHeadingGroup}>
+                  <Text style={styles.modalEyebrow}>TASKFLOW / MEMBERS</Text>
+                  <Text style={styles.heading}>Adicionar integrante</Text>
                 </View>
-              </>
-            )}
 
-            {!!error && (
-              <View style={styles.errorContainer}>
-                <Text style={styles.error}>{error}</Text>
+                <Pressable
+                  style={styles.closeButton}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.closeButtonText}>×</Text>
+                </Pressable>
               </View>
-            )}
 
-            <View style={styles.actions}>
-              <Pressable
-                onPress={() => setModalVisible(false)}
-                style={styles.cancelButton}
-                disabled={addMember.isPending}
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.modalScrollContent}
+                keyboardShouldPersistTaps="handled"
+                bounces={false}
               >
-                <Text style={styles.cancelText}>Cancelar</Text>
-              </Pressable>
+                <Text style={styles.muted}>
+                  Informe o e-mail de uma conta existente no TaskFlow.
+                </Text>
 
-              <Pressable
-                disabled={addMember.isPending}
-                onPress={() => {
-                  if (!email.trim()) {
-                    setError("Informe o e-mail.");
-                    return;
-                  }
+                <Text style={styles.label}>E-mail</Text>
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  placeholder="usuario@exemplo.com"
+                  placeholderTextColor={colors.muted}
+                  editable={!addMember.isPending}
+                />
 
-                  setError("");
-                  addMember.mutate();
-                }}
-                style={[
-                  styles.primaryButton,
-                  addMember.isPending && styles.disabled,
-                ]}
-              >
-                {addMember.isPending ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.primaryButtonText}>Adicionar</Text>
+                {isOwner && (
+                  <>
+                    <Text style={styles.label}>Papel inicial</Text>
+
+                    <View style={styles.roleOptions}>
+                      {(["MEMBER", "ADMIN"] as const).map((role) => {
+                        const selected = memberRole === role;
+                        return (
+                          <Pressable
+                            key={role}
+                            style={[
+                              styles.roleOption,
+                              selected && styles.roleOptionSelected,
+                            ]}
+                            onPress={() => setMemberRole(role)}
+                          >
+                            <Text
+                              style={[
+                                styles.roleOptionText,
+                                selected && styles.roleOptionTextSelected,
+                              ]}
+                            >
+                              {role === "ADMIN" ? "Administrador" : "Membro"}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </>
                 )}
-              </Pressable>
+
+                {!!error && (
+                  <View style={styles.errorContainer}>
+                    <Text style={styles.error}>{error}</Text>
+                  </View>
+                )}
+
+                <View style={styles.actions}>
+                  <Pressable
+                    onPress={() => setModalVisible(false)}
+                    style={styles.cancelButton}
+                    disabled={addMember.isPending}
+                  >
+                    <Text style={styles.cancelText}>Cancelar</Text>
+                  </Pressable>
+
+                  <Pressable
+                    disabled={addMember.isPending}
+                    onPress={() => {
+                      if (!email.trim()) {
+                        setError("Informe o e-mail.");
+                        return;
+                      }
+
+                      setError("");
+                      addMember.mutate();
+                    }}
+                    style={[
+                      styles.primaryButton,
+                      addMember.isPending && styles.disabled,
+                    ]}
+                  >
+                    {addMember.isPending ? (
+                      <ActivityIndicator color="#FFFFFF" />
+                    ) : (
+                      <Text style={styles.primaryButtonText}>Adicionar</Text>
+                    )}
+                  </Pressable>
+                </View>
+              </ScrollView>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -618,6 +645,11 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
+  },
+  memberAvatarImage: {
+    width: "100%",
+    height: "100%",
   },
   memberAvatarText: {
     fontWeight: "700",
@@ -684,13 +716,17 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 13,
   },
-  backdrop: {
+  keyboardAvoidingView: {
     flex: 1,
     justifyContent: "flex-end",
+  },
+  backdrop: {
+    flex: 1,
     backgroundColor: "rgba(36, 37, 31, 0.42)",
+    justifyContent: "flex-end",
   },
   backdropTouch: {
-    flex: 1,
+    ...StyleSheet.absoluteFill,
   },
   modal: {
     backgroundColor: colors.surface,
@@ -698,8 +734,12 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 22,
     paddingHorizontal: 22,
     paddingTop: 12,
-    paddingBottom: 32,
+    paddingBottom: Platform.OS === "ios" ? 34 : 24,
     gap: 12,
+  },
+  modalScrollContent: {
+    paddingBottom: 10,
+    gap: 10,
   },
   modalHandle: {
     width: 35,

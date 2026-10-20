@@ -1,7 +1,9 @@
 import { useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -391,167 +393,174 @@ export default function ProjectsScreen() {
         }}
         statusBarTranslucent
       >
-        <View style={styles.modalBackdrop}>
-          <Pressable
-            style={styles.backdropTouch}
-            onPress={() => {
-              if (!createTeam.isPending && !createProject.isPending)
-                setModal(null);
-            }}
-          />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.keyboardAvoidingView}
+        >
+          <View style={styles.modalBackdrop}>
+            <Pressable
+              style={styles.backdropTouch}
+              onPress={() => {
+                if (!createTeam.isPending && !createProject.isPending)
+                  setModal(null);
+              }}
+            />
 
-          <View style={styles.modalCard}>
-            <View style={styles.modalHandle} />
+            <View style={styles.modalCard}>
+              <View style={styles.modalHandle} />
 
-            <View style={styles.modalHeader}>
-              <View style={styles.modalHeadingGroup}>
-                <Text style={styles.modalEyebrow}>TASKFLOW / WORKSPACE</Text>
-                <Text style={styles.modalTitle}>
-                  {modal === "team" ? "Nova equipe" : "Novo projeto"}
-                </Text>
+              <View style={styles.modalHeader}>
+                <View style={styles.modalHeadingGroup}>
+                  <Text style={styles.modalEyebrow}>TASKFLOW / WORKSPACE</Text>
+                  <Text style={styles.modalTitle}>
+                    {modal === "team" ? "Nova equipe" : "Novo projeto"}
+                  </Text>
+                </View>
+
+                <Pressable
+                  style={styles.closeButton}
+                  onPress={() => setModal(null)}
+                >
+                  <Text style={styles.closeButtonText}>×</Text>
+                </Pressable>
               </View>
 
-              <Pressable
-                style={styles.closeButton}
-                onPress={() => setModal(null)}
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.modalScrollContent}
+                keyboardShouldPersistTaps="handled"
+                bounces={false}
               >
-                <Text style={styles.closeButtonText}>×</Text>
-              </Pressable>
-            </View>
+                {modal === "team" ? (
+                  <>
+                    <Text style={styles.label}>Nome da equipe</Text>
+                    <TextInput
+                      accessibilityLabel="Nome da equipe"
+                      style={styles.input}
+                      value={teamName}
+                      onChangeText={setTeamName}
+                      placeholder="Ex.: Equipe de desenvolvimento"
+                      placeholderTextColor={colors.muted}
+                      editable={!createTeam.isPending}
+                      maxLength={120}
+                      autoCapitalize="words"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.label}>Equipe responsável</Text>
 
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.modalScrollContent}
-            >
-              {modal === "team" ? (
-                <>
-                  <Text style={styles.label}>Nome da equipe</Text>
-                  <TextInput
-                    accessibilityLabel="Nome da equipe"
-                    style={styles.input}
-                    value={teamName}
-                    onChangeText={setTeamName}
-                    placeholder="Ex.: Equipe de desenvolvimento"
-                    placeholderTextColor={colors.muted}
-                    editable={!createTeam.isPending}
-                    maxLength={120}
-                    autoCapitalize="words"
-                  />
-                </>
-              ) : (
-                <>
-                  <Text style={styles.label}>Equipe responsável</Text>
-
-                  <View style={styles.teamOptionsList}>
-                    {teams.map((team) => {
-                      const selected = selectedTeamId === team.id;
-                      return (
-                        <Pressable
-                          key={team.id}
-                          style={[
-                            styles.teamOption,
-                            selected && styles.teamOptionSelected,
-                          ]}
-                          onPress={() => setSelectedTeamId(team.id)}
-                        >
-                          <View style={styles.teamOptionContent}>
-                            <Text
+                    <View style={styles.teamOptionsList}>
+                      {teams.map((team) => {
+                        const selected = selectedTeamId === team.id;
+                        return (
+                          <Pressable
+                            key={team.id}
+                            style={[
+                              styles.teamOption,
+                              selected && styles.teamOptionSelected,
+                            ]}
+                            onPress={() => setSelectedTeamId(team.id)}
+                          >
+                            <View style={styles.teamOptionContent}>
+                              <Text
+                                style={[
+                                  styles.teamOptionText,
+                                  selected && styles.teamOptionTextSelected,
+                                ]}
+                              >
+                                {team.name}
+                              </Text>
+                              <Text style={styles.teamRole}>{team.role}</Text>
+                            </View>
+                            <View
                               style={[
-                                styles.teamOptionText,
-                                selected && styles.teamOptionTextSelected,
+                                styles.radioOuter,
+                                selected && styles.radioOuterSelected,
                               ]}
                             >
-                              {team.name}
-                            </Text>
-                            <Text style={styles.teamRole}>{team.role}</Text>
-                          </View>
-                          <View
-                            style={[
-                              styles.radioOuter,
-                              selected && styles.radioOuterSelected,
-                            ]}
-                          >
-                            {selected && <View style={styles.radioInner} />}
-                          </View>
-                        </Pressable>
-                      );
-                    })}
+                              {selected && <View style={styles.radioInner} />}
+                            </View>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+
+                    {teams.length === 0 && (
+                      <Text style={styles.subtitle}>
+                        Você precisa criar uma equipe primeiro.
+                      </Text>
+                    )}
+
+                    <Text style={styles.label}>Nome do projeto</Text>
+                    <TextInput
+                      accessibilityLabel="Nome do projeto"
+                      style={styles.input}
+                      value={projectName}
+                      onChangeText={setProjectName}
+                      placeholder="Ex.: Aplicativo móvel"
+                      placeholderTextColor={colors.muted}
+                      maxLength={150}
+                      editable={!createProject.isPending}
+                    />
+
+                    <Text style={styles.label}>Descrição (opcional)</Text>
+                    <TextInput
+                      accessibilityLabel="Descrição do projeto"
+                      style={[styles.input, styles.multiline]}
+                      value={description}
+                      onChangeText={setDescription}
+                      placeholder="Qual é o objetivo do projeto?"
+                      placeholderTextColor={colors.muted}
+                      multiline
+                      maxLength={5000}
+                      textAlignVertical="top"
+                      editable={!createProject.isPending}
+                    />
+                  </>
+                )}
+
+                {!!formError && (
+                  <View style={styles.errorContainer}>
+                    <Text style={styles.errorText}>{formError}</Text>
                   </View>
+                )}
 
-                  {teams.length === 0 && (
-                    <Text style={styles.subtitle}>
-                      Você precisa criar uma equipe primeiro.
-                    </Text>
-                  )}
+                <View style={styles.modalActions}>
+                  <Pressable
+                    style={styles.cancelButton}
+                    onPress={() => setModal(null)}
+                    disabled={createTeam.isPending || createProject.isPending}
+                  >
+                    <Text style={styles.cancelButtonLabel}>Cancelar</Text>
+                  </Pressable>
 
-                  <Text style={styles.label}>Nome do projeto</Text>
-                  <TextInput
-                    accessibilityLabel="Nome do projeto"
-                    style={styles.input}
-                    value={projectName}
-                    onChangeText={setProjectName}
-                    placeholder="Ex.: Aplicativo móvel"
-                    placeholderTextColor={colors.muted}
-                    maxLength={150}
-                    editable={!createProject.isPending}
-                  />
-
-                  <Text style={styles.label}>Descrição (opcional)</Text>
-                  <TextInput
-                    accessibilityLabel="Descrição do projeto"
-                    style={[styles.input, styles.multiline]}
-                    value={description}
-                    onChangeText={setDescription}
-                    placeholder="Qual é o objetivo do projeto?"
-                    placeholderTextColor={colors.muted}
-                    multiline
-                    maxLength={5000}
-                    textAlignVertical="top"
-                    editable={!createProject.isPending}
-                  />
-                </>
-              )}
-
-              {!!formError && (
-                <View style={styles.errorContainer}>
-                  <Text style={styles.errorText}>{formError}</Text>
-                </View>
-              )}
-
-              <View style={styles.modalActions}>
-                <Pressable
-                  style={styles.cancelButton}
-                  onPress={() => setModal(null)}
-                  disabled={createTeam.isPending || createProject.isPending}
-                >
-                  <Text style={styles.cancelButtonLabel}>Cancelar</Text>
-                </Pressable>
-
-                <Pressable
-                  style={[
-                    styles.primaryButton,
-                    (createTeam.isPending ||
+                  <Pressable
+                    style={[
+                      styles.primaryButton,
+                      (createTeam.isPending ||
+                        createProject.isPending ||
+                        (modal === "project" && teams.length === 0)) &&
+                        styles.disabled,
+                    ]}
+                    disabled={
+                      createTeam.isPending ||
                       createProject.isPending ||
-                      (modal === "project" && teams.length === 0)) &&
-                      styles.disabled,
-                  ]}
-                  disabled={
-                    createTeam.isPending ||
-                    createProject.isPending ||
-                    (modal === "project" && teams.length === 0)
-                  }
-                  onPress={modal === "team" ? submitTeam : submitProject}
-                >
-                  {createTeam.isPending || createProject.isPending ? (
-                    <ActivityIndicator color="#FFFFFF" />
-                  ) : (
-                    <Text style={styles.primaryButtonLabel}>Criar</Text>
-                  )}
-                </Pressable>
-              </View>
-            </ScrollView>
+                      (modal === "project" && teams.length === 0)
+                    }
+                    onPress={modal === "team" ? submitTeam : submitProject}
+                  >
+                    {createTeam.isPending || createProject.isPending ? (
+                      <ActivityIndicator color="#FFFFFF" />
+                    ) : (
+                      <Text style={styles.primaryButtonLabel}>Criar</Text>
+                    )}
+                  </Pressable>
+                </View>
+              </ScrollView>
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -801,22 +810,25 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 13,
   },
+  keyboardAvoidingView: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
   modalBackdrop: {
     flex: 1,
     justifyContent: "flex-end",
     backgroundColor: "rgba(36, 37, 31, 0.42)",
   },
   backdropTouch: {
-    flex: 1,
+    ...StyleSheet.absoluteFill,
   },
   modalCard: {
     backgroundColor: colors.surface,
     paddingHorizontal: 22,
     paddingTop: 12,
-    paddingBottom: 32,
+    paddingBottom: Platform.OS === "ios" ? 34 : 24,
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22,
-    maxHeight: "90%",
     gap: 12,
   },
   modalHandle: {
@@ -861,7 +873,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   modalScrollContent: {
-    paddingBottom: 20,
+    paddingBottom: 10,
     gap: 10,
   },
   label: {
